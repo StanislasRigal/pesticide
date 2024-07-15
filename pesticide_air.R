@@ -1,10 +1,10 @@
 # Load data on pesticide in the air https://www.data.gouv.fr/fr/datasets/base-de-donnee-de-surveillance-de-pesticides-dans-l-air-par-les-aasqa-a-partir-de-2002/
 
-pesticide_raw <- read.csv("raw_data/pesticides-2002-2021-v09-2022.csv")
+pesticide_raw <- read.csv("raw_data/pesticides-2002-2022-v03-2024-vf.csv")
 
 # load geographical data for French communes from https://public.opendatasoft.com/explore/dataset/georef-france-commune-arrondissement-municipal-millesime/export/?disjunctive.reg_name&disjunctive.dep_name&disjunctive.arrdep_name&disjunctive.ze2020_name&disjunctive.bv2012_name&disjunctive.epci_name&disjunctive.ept_name&disjunctive.com_name&disjunctive.com_arm_name&disjunctive.com_arm_is_mountain_area&sort=year&location=6,46.97276,3.93311&basemap=jawg.light
 
-spdf_com <- geojson_read("raw_data/georef-france-commune-arrondissement-municipal-millesime.geojson",  what = "sp")
+spdf_com <- sf::st_read("raw_data/georef-france-commune-arrondissement-municipal-millesime.geojson",  what = "sp")
 
 spdf_com_metro <- spdf_com[which(spdf_com@data$reg_name %in% c("Nouvelle-Aquitaine","Centre-Val de Loire","Bourgogne-Franche-Comté","Hauts-de-France",
                                                    "Normandie","Grand Est","Bretagne","Occitanie","Île-de-France","Provence-Alpes-Côte d'Azur",
