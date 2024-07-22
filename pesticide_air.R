@@ -81,6 +81,51 @@ library(exactextractr)
 k_rast <- rast(k)
 
 a <- exact_extract(k_rast, fr, fun = "mean")
+a_var <- exact_extract(k_rast, fr, fun = "variance")
 fr$pred1 <- a$mean.var1.pred_lyr.1
-ggplot() + geom_sf(data = fr, mapping = aes(fill = pred1),col=NA) +
+fr$var_pred1 <- a_var$variance.var1.pred_lyr.1
+ggplot() + geom_sf(data = fr, mapping = aes(fill = sqrt(pred1)),col=NA) +
+  scale_fill_gradientn(colors = sf.colors(20))
+ggplot() + geom_sf(data = fr, mapping = aes(fill = sqrt(var_pred1)),col=NA) +
+  scale_fill_gradientn(colors = sf.colors(20))
+
+## Trend model with SA use
+
+pesticide_pre_itt_sau <- readRDS("output/pesticide_pre_itt_sau.rds")
+#folpel_use <- pesticide_pre_itt_sau[grep("folpel",pesticide_pre_itt_sau$Substances.actives),]
+folpel_use <- pesticide_pre_itt_sau[which(pesticide_pre_itt_sau$substance=="folpel"),]
+folpel_use <- folpel_use[which(folpel_use$sau_tot > 0),]
+folpel_use <- data.frame(folpel_use %>% group_by(code_postal_acheteur,annee) %>% summarize(itt_year = sum(itt)))
+folpel_use <- data.frame(folpel_use %>% group_by(code_postal_acheteur) %>% summarize(itt_mean = mean(itt_year)))
+
+fr_folpel_use <- merge(fr,folpel_use,by.x="postal_code",by.y="code_postal_acheteur", all.x=TRUE)
+fr_folpel_use$itt_mean[which(is.na(fr_folpel_use$itt_mean))] <- 0
+ggplot() + geom_sf(data = fr_folpel_use, mapping = aes(fill = sqrt(itt_mean)),col=NA) +
+  scale_fill_gradientn(colors = sf.colors(20))
+
+folpel_air_use <- st_intersection(pesticide_air_folpel_sf,fr_folpel_use)
+folpel_air_use <- folpel_air_use[which(folpel_air_use$itt_mean<1),]
+summary(lm(qte~sqrt(itt_mean), folpel_air_use))
+
+vr <- variogram(qte~sqrt(itt_mean), folpel_air_use,cutoff=40000)
+vr.m <- fit.variogram(vr, vgm("Exp"))
+
+plot(vr, vr.m, plot.numbers = TRUE)
+
+## Kriging with SA use
+
+grd_folpel <- st_rasterize(fr_folpel_use, st_crop(st_as_stars(st_bbox(fr),dx = 10000),fr))
+st_crs(grd_folpel) <- st_crs(fr_folpel_use)
+
+kr <- krige(qte~sqrt(itt_mean), folpel_air_use, grd_folpel["itt_mean"], vr.m)
+
+kr_rast <- rast(kr)
+
+ar <- exact_extract(kr_rast, fr, fun = "mean")
+ar_var <- exact_extract(kr_rast, fr, fun = "variance")
+fr$pred1_r <- ar$mean.var1.pred_lyr.1
+fr$var_pred1_r <- ar_var$variance.var1.pred_lyr.1
+ggplot() + geom_sf(data = fr, mapping = aes(fill = sqrt(pred1_r)),col=NA) +
+  scale_fill_gradientn(colors = sf.colors(20))
+ggplot() + geom_sf(data = fr, mapping = aes(fill = sqrt(var_pred1)),col=NA) +
   scale_fill_gradientn(colors = sf.colors(20))

@@ -394,6 +394,8 @@ code_postal_insee <- data.frame(code_postal[,c("insee_com","postal_code","nom_co
 
 code_postal_insee_SAU <- merge(code_postal_insee,SAU, by.x="insee_com", by.y="codgeo", all.x=TRUE)
 
+code_postal_insee_SAU <- data.frame(code_postal_insee_SAU %>% group_by(postal_code) %>% summarize(superficie_tot=sum(superficie, na.rm=TRUE),
+                                                                                                  sau_tot = sum(sau2020, na.rm = TRUE)))
 
 ## get homologated usage doses per product https://www.data.gouv.fr/fr/datasets/donnees-ouvertes-du-catalogue-e-phy-des-produits-phytopharmaceutiques-matieres-fertilisantes-et-supports-de-culture-adjuvants-produits-mixtes-et-melanges/
 
@@ -437,13 +439,22 @@ usage_produit_sa_unique$dose_homo_sa <- NA
 usage_produit_sa_unique$dose_homo_sa[which(usage_produit_sa_unique$sa_produit %in% c("g/kg_kg/ha","g/L_L/ha"))] <- 0.001 * usage_produit_sa_unique$value_sa[which(usage_produit_sa_unique$sa_produit %in% c("g/kg_kg/ha","g/L_L/ha"))] * usage_produit_sa_unique$dose[which(usage_produit_sa_unique$sa_produit %in% c("g/kg_kg/ha","g/L_L/ha"))]
 usage_produit_sa_unique$dose_homo_sa[which(usage_produit_sa_unique$sa_produit %in% c("%_kg/ha"))] <- 0.01 * usage_produit_sa_unique$value_sa[which(usage_produit_sa_unique$sa_produit %in% c("%_kg/ha"))] * usage_produit_sa_unique$dose[which(usage_produit_sa_unique$sa_produit %in% c("%_kg/ha"))]
 
+#saveRDS(usage_produit_sa_unique,"output/usage_produit_sa_unique.rds")
+usage_produit_sa_unique <- readRDS("output/usage_produit_sa_unique.rds")
 
 ## get ITT per commune ITT = sum(QSA/DHSA)/SAU
 
+### by postal code and SA
 pesticide_pre_itt <- pesticide_substance_all_region[which(pesticide_substance_all_region$amm %in% unique(usage_produit_sa_unique$numero.AMM)),]
 pesticide_pre_itt <- merge(pesticide_pre_itt,usage_produit_sa_unique,by.x=c("amm"), by.y=c("numero.AMM"), all.x=TRUE)
 pesticide_pre_itt$qsa_dhsa <- pesticide_pre_itt$quantite_substance/pesticide_pre_itt$dose_homo_sa
 
+pesticide_pre_itt_sau <- merge(pesticide_pre_itt,code_postal_insee_SAU,by.x="code_postal_acheteur",by.y="postal_code",all.x = TRUE)
+pesticide_pre_itt_sau$itt <- pesticide_pre_itt_sau$qsa_dhsa/pesticide_pre_itt_sau$sau_tot
+#saveRDS(pesticide_pre_itt_sau,"output/pesticide_pre_itt_sau.rds")
+pesticide_pre_itt_sau <- readRDS("output/pesticide_pre_itt_sau.rds")
+
+### by postal code
 pesticide_itt <- data.frame(pesticide_pre_itt %>% group_by(code_postal_acheteur) %>% summarise(sum_qsa_dhsa = sum(qsa_dhsa, na.rm=T)))
 pesticide_itt_sau <- merge(code_postal_insee_SAU,pesticide_itt,by.x="postal_code",by.y="code_postal_acheteur",all.x = TRUE)
 pesticide_itt_sau$itt <- pesticide_itt_sau$sum_qsa_dhsa/pesticide_itt_sau$sau2020
