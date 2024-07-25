@@ -37,7 +37,8 @@ pesticide_air_folpel_sf <- st_as_sf(pesticide_air_folpel, crs = "EPSG:2154", coo
 fr <- st_transform(code_postal[which(!(code_postal$nom_region %in% c("GUYANE","MAYOTTE","GUADELOUPE","MARTINIQUE","REUNION"))),],crs = "EPSG:2154" ) 
 
 ggplot() + geom_sf(data = fr) + 
-  geom_sf(data = pesticide_air_folpel_sf, mapping = aes(col = qte))
+  geom_sf(data = pesticide_air_folpel_sf, mapping = aes(col = qte))+
+  scale_color_gradientn(colors = sf.colors(20))
 
 ## Get a grid for interpolation
 
