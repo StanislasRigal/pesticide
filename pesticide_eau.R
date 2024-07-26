@@ -48,10 +48,51 @@ pesticide_water <- read.csv2("raw_data/naiade_all/analyses_2022.csv")
 
 ## subset data from all data to get a small dataset
 
-pesticide_water2 <- pesticide_water[which(pesticide_water$MnemoRqAna == "Résultat > seuil de quantification et < au seuil de saturation"),]
+pesticide_water <- pesticide_water[which(pesticide_water$LbQualAna == "Correcte" & pesticide_water$LbSupport == "Eau"),]
+gc()
+
+### true 0
+
+pesticide_water$LdAna <- as.numeric(pesticide_water$LdAna)
+pesticide_water$LqAna <- as.numeric(pesticide_water$LqAna)
+
+min_threshold <- pesticide_water[,c("LbLongParamètre","LdAna","LqAna")]
+
+min_threshold <- as.data.frame(min_threshold %>% group_by(LbLongParamètre) %>% summarize(min_LdAna = min(LdAna, na.rm=TRUE), min_LqAna = min(LqAna, na.rm=TRUE)))
+
+pesticide_water_true0 <- pesticide_water[which(pesticide_water$MnemoRqAna == "Résultat < seuil de détection"),]
+
+pesticide_water_true0 <- ddply(pesticide_water_true0, .(LbLongParamètre),
+      .fun = function(x,min_threshold){
+        molecule <- unique(x$LbLongParamètre)
+        min_threshold_molecule <- min_threshold$min_LdAna[which(min_threshold$LbLongParamètre == molecule)]
+        return(x[which(x$LdAna == min_threshold_molecule),])
+      }, min_threshold=min_threshold, .progress = "text")
+
+### trace
+
+pesticide_water_trace <- pesticide_water[which(pesticide_water$MnemoRqAna %in% c("Traces (< seuil de quantification et > seuil de détection)","Résultat < au seuil de quantification")),]
+gc()
+pesticide_water_trace <- ddply(pesticide_water_trace, .(LbLongParamètre),
+                               .fun = function(x,min_threshold){
+                                 molecule <- unique(x$LbLongParamètre)
+                                 min_threshold_molecule <- min_threshold$min_LqAna[which(min_threshold$LbLongParamètre == molecule)]
+                                 return(x[which(x$LqAna == min_threshold_molecule),])
+                               }, min_threshold=min_threshold, .progress = "text")
+gc()
+
+### true quantification
+
+pesticide_water_present <- pesticide_water[which(pesticide_water$MnemoRqAna == "Résultat > seuil de quantification et < au seuil de saturation"),]
 rm(pesticide_water)
 gc()
-pesticide_water_quanti <- pesticide_water2[which(pesticide_water2$LbQualAna == "Correcte" & pesticide_water2$LbSupport == "Eau"),]
+
+pesticide_water_true0$RsAna_interpreted <- 0 # zero if < to the lowest detection threshold
+pesticide_water_trace$RsAna_interpreted <- pesticide_water_trace$LdAna # at least detection threshold if < to the minimal quantification threshold
+pesticide_water_trace <- pesticide_water_trace[which(!is.na(pesticide_water_trace$RsAna_interpreted)),]
+pesticide_water_present$RsAna_interpreted <- pesticide_water_present$RsAna
+
+pesticide_water_quanti <- rbind(pesticide_water_true0,pesticide_water_trace,pesticide_water_present)
 
 
 ### get sa molecule to follow
@@ -68,7 +109,7 @@ pesticide_water_quanti <- pesticide_water_quanti[which(pesticide_water_quanti$Lb
 
 ### get data for metropole only
 
-pesticide_water_station <- merge(pesticide_water_quanti,station_water_metro, by="CdStationMesureEauxSurface")
+pesticide_water_station <- merge(pesticide_water_quanti,station_water_metro[,c("CoordXStationMesureEauxSurface","CoordYStationMesureEauxSurface","CdCommune","CdStationMesureEauxSurface")], by="CdStationMesureEauxSurface")
 
 
 
@@ -150,9 +191,32 @@ ggplot() + geom_sf(data = bassin_versant_fr) +
   geom_sf(data = pesticide_water_folpel_sf, mapping = aes(col = qte)) +
   scale_color_gradientn(colors = sf.colors(20))
 
-library(stars)
-bassin_versant_folpel <- st_extract(st_as_stars(bassin_versant_fr, name = attr(bassin_versant_fr,"geom")),pesticide_water_folpel_sf)
+bassin_versant_folpel <- st_join(bassin_versant_fr,pesticide_water_folpel_sf)
+bassin_versant_folpel <- bassin_versant_folpel %>% mutate() %>% group_by(CdOH) %>%  summarise(qte_mean=mean(qte,na.rm=TRUE))
 
 ggplot() + 
-  geom_sf(data = bassin_versant_folpel, mapping = aes(col = qte)) +
+  geom_sf(data = bassin_versant_folpel, mapping = aes(fill = qte_mean)) +
+  scale_fill_gradientn(colors = sf.colors(20), na.value = "transparent")
+
+
+## test with glyphosate
+
+pesticide_water_glyphosate <- data.frame(pesticide_water_station_simple[which(pesticide_water_station_simple$LbLongParamètre == "Glyphosate"),] %>% group_by(CdStationMesureEauxSurface,CoordXStationMesureEauxSurface,CoordYStationMesureEauxSurface,SymUniteMesure) %>% summarize(qte=mean(RsAna, na.rm=TRUE)))
+
+
+pesticide_water_glyphosate_sf <- st_as_sf(pesticide_water_glyphosate, crs = "EPSG:2154", coords = c("CoordXStationMesureEauxSurface", "CoordYStationMesureEauxSurface"))
+
+ggplot() + geom_sf(data = fr) + 
+  geom_sf(data = pesticide_water_glyphosate_sf, mapping = aes(col = qte)) +
   scale_color_gradientn(colors = sf.colors(20))
+
+ggplot() + geom_sf(data = bassin_versant_fr) + 
+  geom_sf(data = pesticide_water_glyphosate_sf, mapping = aes(col = qte)) +
+  scale_color_gradientn(colors = sf.colors(20))
+
+bassin_versant_glyphosate <- st_join(bassin_versant_fr,pesticide_water_glyphosate_sf)
+bassin_versant_glyphosate <- bassin_versant_glyphosate %>% mutate() %>% group_by(CdOH) %>%  summarise(qte_mean=mean(qte,na.rm=TRUE))
+
+ggplot() + 
+  geom_sf(data = bassin_versant_glyphosate, mapping = aes(fill = qte_mean)) +
+  scale_fill_gradientn(colors = sf.colors(20), na.value = "transparent")
