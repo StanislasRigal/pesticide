@@ -188,16 +188,29 @@ for(i in 1:length(unique(pesticide_air_station_sub$Substance.active))){
   sa_air_use <- st_intersection(pesticide_air_sa_sf,fr_sa_use)
   sa_air_use <- sa_air_use[which(sa_air_use$itt_mean<1),]
   
-  vr <- variogram(qte~itt_mean, sa_air_use,cutoff=100000)
-  vr.m <- fit.variogram(vr, vgm("Exp"))
-  #plot(vr, vr.m, plot.numbers = TRUE)
-  
-  ### Kriging with SA use
-  
-  grd_sa <- st_rasterize(fr_sa_use, st_crop(st_as_stars(st_bbox(fr),dx = 1000),fr))
-  st_crs(grd_sa) <- st_crs(fr_sa_use)
-  
-  kr <- krige(qte~itt_mean, sa_air_use, grd_sa["itt_mean"], vr.m)
+  if(max(sa_air_use$itt_mean) > 0){
+    vr <- variogram(qte~itt_mean, sa_air_use,cutoff=100000)
+    vr.m <- fit.variogram(vr, vgm("Exp"))
+    #plot(vr, vr.m, plot.numbers = TRUE)
+    
+    ### Kriging with SA use
+    
+    grd_sa <- st_rasterize(fr_sa_use, st_crop(st_as_stars(st_bbox(fr),dx = 1000),fr))
+    st_crs(grd_sa) <- st_crs(fr_sa_use)
+    
+    kr <- krige(qte~itt_mean, sa_air_use, grd_sa["itt_mean"], vr.m)
+  }else{
+    vr <- variogram(qte~1, sa_air_use,cutoff=100000)
+    vr.m <- fit.variogram(vr, vgm("Exp"))
+    #plot(vr, vr.m, plot.numbers = TRUE)
+    
+    ### Kriging with SA use
+    
+    grd_sa <- st_rasterize(fr_sa_use, st_crop(st_as_stars(st_bbox(fr),dx = 1000),fr))
+    st_crs(grd_sa) <- st_crs(fr_sa_use)
+    
+    kr <- krige(qte~1, sa_air_use, grd_sa["itt_mean"], vr.m)
+  }
   
   grd_sa$pred_sa <- kr[["var1.pred"]]
   grd_sa_sf <- st_as_sf(grd_sa)
