@@ -148,18 +148,17 @@ to_bind10 <- data.frame(to_bind10,year=2022)
 pesticide_water_station_all <- rbind(to_bind1,to_bind2,to_bind3,to_bind4,to_bind5,
                                      to_bind6,to_bind7,to_bind8,to_bind9,to_bind10)
 
-pesticide_water_station_all$LbStationMesureEauxSurface.y <- NULL
-names(pesticide_water_station_all)[2] <- "LbStationMesureEauxSurface"
 
 pesticide_water_station_all <- pesticide_water_station_all[which(!(pesticide_water_station_all$LbLongParamètre %in% c("Potassium","Calcium","Sodium",
                                                                                                                       "Sulfates","Ammonium","Cuivre"))),]
 pesticide_water_station_all$RsAna <- as.numeric(pesticide_water_station_all$RsAna)
+pesticide_water_station_all$RsAna_interpreted <- as.numeric(pesticide_water_station_all$RsAna_interpreted)
 
 
 #saveRDS(pesticide_water_station_all,"raw_data/naiade_all/pesticide_water_station_all.rds")
 pesticide_water_station_all <- readRDS("raw_data/naiade_all/pesticide_water_station_all.rds")
 
-pesticide_water_station_simple <- pesticide_water_station_all[,c("CdStationMesureEauxSurface","RsAna","SymUniteMesure","LbLongParamètre","CoordXStationMesureEauxSurface",
+pesticide_water_station_simple <- pesticide_water_station_all[,c("CdStationMesureEauxSurface","RsAna","RsAna_interpreted","SymUniteMesure","LbLongParamètre","CoordXStationMesureEauxSurface",
                                                                  "CoordYStationMesureEauxSurface","year")]
 
 
@@ -174,7 +173,7 @@ bassin_versant <- st_read("raw_data/naiade_all/BassinVersantTopographique_FXX.gp
 
 ## test with folpel
 
-pesticide_water_folpel <- data.frame(pesticide_water_station_simple[which(pesticide_water_station_simple$LbLongParamètre == "Folpel"),] %>% group_by(CdStationMesureEauxSurface,CoordXStationMesureEauxSurface,CoordYStationMesureEauxSurface,SymUniteMesure) %>% summarize(qte=mean(RsAna, na.rm=TRUE)))
+pesticide_water_folpel <- data.frame(pesticide_water_station_simple[which(pesticide_water_station_simple$LbLongParamètre == "Folpel"),] %>% group_by(CdStationMesureEauxSurface,CoordXStationMesureEauxSurface,CoordYStationMesureEauxSurface,SymUniteMesure) %>% summarize(qte=mean(RsAna_interpreted, na.rm=TRUE)))
 
 
 pesticide_water_folpel_sf <- st_as_sf(pesticide_water_folpel, crs = "EPSG:2154", coords = c("CoordXStationMesureEauxSurface", "CoordYStationMesureEauxSurface"))
@@ -194,14 +193,16 @@ ggplot() + geom_sf(data = bassin_versant_fr) +
 bassin_versant_folpel <- st_join(bassin_versant_fr,pesticide_water_folpel_sf)
 bassin_versant_folpel <- bassin_versant_folpel %>% mutate() %>% group_by(CdOH) %>%  summarise(qte_mean=mean(qte,na.rm=TRUE))
 
+log_add <- min(bassin_versant_folpel$qte_mean,na.rm=TRUE)/10
+
 ggplot() + 
-  geom_sf(data = bassin_versant_folpel, mapping = aes(fill = qte_mean)) +
+  geom_sf(data = bassin_versant_folpel, mapping = aes(fill = log(qte_mean+log_add))) +
   scale_fill_gradientn(colors = sf.colors(20), na.value = "transparent")
 
 
 ## test with glyphosate
 
-pesticide_water_glyphosate <- data.frame(pesticide_water_station_simple[which(pesticide_water_station_simple$LbLongParamètre == "Glyphosate"),] %>% group_by(CdStationMesureEauxSurface,CoordXStationMesureEauxSurface,CoordYStationMesureEauxSurface,SymUniteMesure) %>% summarize(qte=mean(RsAna, na.rm=TRUE)))
+pesticide_water_glyphosate <- data.frame(pesticide_water_station_simple[which(pesticide_water_station_simple$LbLongParamètre == "Glyphosate"),] %>% group_by(CdStationMesureEauxSurface,CoordXStationMesureEauxSurface,CoordYStationMesureEauxSurface,SymUniteMesure) %>% summarize(qte=mean(RsAna_interpreted, na.rm=TRUE)))
 
 
 pesticide_water_glyphosate_sf <- st_as_sf(pesticide_water_glyphosate, crs = "EPSG:2154", coords = c("CoordXStationMesureEauxSurface", "CoordYStationMesureEauxSurface"))
@@ -217,6 +218,60 @@ ggplot() + geom_sf(data = bassin_versant_fr) +
 bassin_versant_glyphosate <- st_join(bassin_versant_fr,pesticide_water_glyphosate_sf)
 bassin_versant_glyphosate <- bassin_versant_glyphosate %>% mutate() %>% group_by(CdOH) %>%  summarise(qte_mean=mean(qte,na.rm=TRUE))
 
+log_add <- min(bassin_versant_glyphosate$qte_mean,na.rm=TRUE)/10
+
 ggplot() + 
-  geom_sf(data = bassin_versant_glyphosate, mapping = aes(fill = qte_mean)) +
+  geom_sf(data = bassin_versant_glyphosate, mapping = aes(fill = log(qte_mean+log_add))) +
+  scale_fill_gradientn(colors = sf.colors(20), na.value = "transparent")
+
+
+### get for all sa
+
+bassin_versant_all <- bassin_versant_fr %>% mutate() %>% group_by(CdOH) %>% summarize(count=n())
+
+for(i in 1:length(unique(pesticide_water_station_simple$LbLongParamètre))){
+  
+  print(i)
+  
+  sa_name <- unique(pesticide_water_station_simple$LbLongParamètre)[i]
+  
+  pesticide_water_sa <- data.frame(pesticide_water_station_simple[which(pesticide_water_station_simple$LbLongParamètre == sa_name),] %>% group_by(CdStationMesureEauxSurface,CoordXStationMesureEauxSurface,CoordYStationMesureEauxSurface,SymUniteMesure) %>% summarize(qte=mean(RsAna_interpreted, na.rm=TRUE)))
+  
+  pesticide_water_sa_sf <- st_as_sf(pesticide_water_sa, crs = "EPSG:2154", coords = c("CoordXStationMesureEauxSurface", "CoordYStationMesureEauxSurface"))
+  
+  bassin_versant_sa <- st_join(bassin_versant_fr,pesticide_water_sa_sf)
+  bassin_versant_sa <- bassin_versant_sa %>% mutate() %>% group_by(CdOH) %>%  summarise(qte_mean=mean(qte,na.rm=TRUE))
+  
+  bassin_versant_all$new_col <- bassin_versant_sa$qte_mean
+  
+  names(bassin_versant_all)[which(names(bassin_versant_all) == "new_col")] <- sa_name
+  
+}
+
+log_add <- min(bassin_versant_all$Propargite,na.rm=TRUE)/10
+ggplot() + 
+  geom_sf(data = bassin_versant_all, mapping = aes(fill = log(Propargite+log_add))) +
+  scale_fill_gradientn(colors = sf.colors(20), na.value = "transparent")
+
+saveRDS(bassin_versant_all,"output/bassin_versant_all.rds")
+bassin_versant_all <- readRDS("output/bassin_versant_all.rds")
+
+### average water pollution
+
+bassin_versant_df <- bassin_versant_all[,4:ncol(bassin_versant_all)]
+st_geometry(bassin_versant_df) <- NULL
+bassin_versant_df <- data.frame(bassin_versant_df)
+bassin_versant_df_scale <- apply(bassin_versant_df,2,function(x){scale(x, center = FALSE)})
+bassin_versant_all$mean_pesticide <- apply(bassin_versant_df,1, function(x){mean(x,na.rm=TRUE)})
+bassin_versant_all$mean_pesticide_scale <- apply(bassin_versant_df_scale,1, function(x){mean(x,na.rm=TRUE)})
+
+
+log_add <- min(bassin_versant_all$mean_pesticide,na.rm=TRUE)/10
+ggplot() + 
+  geom_sf(data = bassin_versant_all, mapping = aes(fill = log(mean_pesticide+log_add))) +
+  scale_fill_gradientn(colors = sf.colors(20), na.value = "transparent")
+
+log_add_scale <- abs(min(bassin_versant_all$mean_pesticide_scale,na.rm=TRUE)) + abs(min(bassin_versant_all$mean_pesticide_scale,na.rm=TRUE))/10
+ggplot() + 
+  geom_sf(data = bassin_versant_all, mapping = aes(fill = log(mean_pesticide_scale+log_add))) +
   scale_fill_gradientn(colors = sf.colors(20), na.value = "transparent")
