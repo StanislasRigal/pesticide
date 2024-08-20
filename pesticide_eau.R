@@ -275,3 +275,44 @@ log_add_scale <- abs(min(bassin_versant_all$mean_pesticide_scale,na.rm=TRUE)) + 
 ggplot() + 
   geom_sf(data = bassin_versant_all, mapping = aes(fill = log(mean_pesticide_scale+log_add))) +
   scale_fill_gradientn(colors = sf.colors(20), na.value = "transparent")
+
+
+## by year
+
+bassin_versant_all_year <- bassin_versant_fr
+st_geometry(bassin_versant_all_year) <- NULL
+bassin_versant_all_year <- bassin_versant_all_year %>% mutate() %>% group_by(CdOH) %>% summarize(count=n())
+bassin_versant_all_year$year <- rep(2013:2022,nrow(bassin_versant_all_year)/10)
+bassin_versant_all_year <- bassin_versant_all_year %>% complete(CdOH,year)
+bassin_versant_all_year <- merge(bassin_versant_fr,bassin_versant_all_year,by="CdOH")
+
+for(i in 1:length(unique(pesticide_water_station_simple$LbLongParamètre))){
+  
+  print(i)
+  
+  sa_name <- unique(pesticide_water_station_simple$LbLongParamètre)[i]
+  
+  pesticide_water_sa <- data.frame(pesticide_water_station_simple[which(pesticide_water_station_simple$LbLongParamètre == sa_name),] %>% group_by(CdStationMesureEauxSurface,CoordXStationMesureEauxSurface,CoordYStationMesureEauxSurface,SymUniteMesure,year) %>% summarize(qte=mean(RsAna_interpreted, na.rm=TRUE)))
+  
+  pesticide_water_sa_sf <- st_as_sf(pesticide_water_sa, crs = "EPSG:2154", coords = c("CoordXStationMesureEauxSurface", "CoordYStationMesureEauxSurface"))
+  
+  bassin_versant_sa <- st_join(bassin_versant_fr,pesticide_water_sa_sf)
+  bassin_versant_sa <- bassin_versant_sa %>% mutate() %>% group_by(CdOH,year) %>%  summarise(qte_mean=mean(qte,na.rm=TRUE))
+  
+  st_geometry(bassin_versant_sa) <- NULL
+  
+  bassin_versant_sa <- data.frame(bassin_versant_sa)
+  
+  bassin_versant_all_year <- merge(bassin_versant_all_year, bassin_versant_sa, by=c("CdOH","year"), all.x=TRUE)
+  
+  names(bassin_versant_all_year)[which(names(bassin_versant_all_year) == "qte_mean")] <- sa_name
+  
+}
+
+log_add <- min(bassin_versant_all_year$Propargite,na.rm=TRUE)/10
+ggplot() + 
+  geom_sf(data = bassin_versant_all_year[which(bassin_versant_all_year$year==2013),], mapping = aes(fill = log(Propargite+log_add))) +
+  scale_fill_gradientn(colors = sf.colors(20), na.value = "transparent")
+
+saveRDS(bassin_versant_all_year,"output/bassin_versant_all_year.rds")
+bassin_versant_all_year <- readRDS("output/bassin_versant_all_year.rds")
