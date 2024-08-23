@@ -16,7 +16,7 @@ substance_active <- read.csv2("raw_data/decisionamm-intrant-format-csv-20240710-
 
 names(df_sa_year_long)[which(!(names(df_sa_year_long) %in% substance_active$Nom.substance.active))]
 
-names(df_sa_year_long)[which(!(names(df_sa_year_long) %in% substance_active$Nom.substance.active))][-c(1:4)] <- c("Abamectin","Azoxystrobin","Bifenthrin","Bromoxynil","Captan",
+names(df_sa_year_long)[which(!(names(df_sa_year_long) %in% substance_active$Nom.substance.active))][-c(1:3)] <- c("Abamectin","Azoxystrobin","Bifenthrin","Bromoxynil","Captan",
                                                                                                                  "Chloridazon","Chlorpropham","Chlorthal-dimethyl","Chlortoluron","Clothianidin",
                                                                                                                  "Cyazofamid","Cyfluthrin","Fenhexamid","Fenpropidin","Fenpropimorph",  
                                                                                                                  "Flonicamid","Florasulam","Flumioxazin","Folpet","Imidacloprid",       
@@ -79,7 +79,7 @@ names(itt_pesticide_year)[which(!(names(itt_pesticide_year) %in% substance_activ
                                                                                                                            "Bensulfuron","Beta-Cyfluthrin","Bicarbonate de potassium", "Bifenthrin","Bromoxynil","Buprofezin",
                                                                                                                            "Piperonyl butoxide","Captan","Carfentrazone-ethyl","Chlorates","Chloridazon","Chlormequat",
                                                                                                                            "Chlorpropham","Chlorpyrifos","Chlorpyrifos-methyl","Chlorthal-dimethyl","Choline chloride","Cinidon-ethyl",
-                                                                                                                           "Cintofen","Clethodim","Clopyralid","Clothianidin","COS-OGA","Copper compounds",
+                                                                                                                           "Sintofen","Clethodim","Clopyralid","Clothianidin","COS-OGA","Copper compounds",
                                                                                                                            "Cuivre de l oxychlorure de cuivre","Cuivre de l oxyde cuivreux","Cuivre du sulfate de cuivre","Cuivre du sulfate tetracuivrique et tricalcique","Cuivre du sulfate tribasique","Cuivre du tallate de cuivre",
                                                                                                                            "Cyanamide (H & Ca cyanamide)","Cyazofamid","Cycloxydim","Cydia pomonella Granulovirus (CpGV)","Cyfluthrin","Cyhalofop-butyl",
                                                                                                                            "Cypermethrin","Cyprodinil","1-Decanol","Deltamethrin","Didecyldimethylammonium chloride","Dichlorprop-P",
@@ -140,6 +140,80 @@ mandatory_all <- substance_active_unique$Nom.substance.active[which(substance_ac
                                               substance_active_unique$Nom.substance.active %in% mandatory_2020 &
                                               substance_active_unique$Nom.substance.active %in% mandatory_2021)]
 
-pesticide_soil <- itt_pesticide_year[,which(names(itt_pesticide_year) %in% mandatory_all)]
-pesticide_air <- df_sa_year_long[,which(names(df_sa_year_long) %in% mandatory_all)]
-pesticide_water <- bassin_versant_all_year[,which(names(bassin_versant_all_year) %in% mandatory_all)]
+pesticide_soil <- itt_pesticide_year[,c(1,2,which(names(itt_pesticide_year) %in% mandatory_all))]
+pesticide_air <- df_sa_year_long[,c(1,2,which(names(df_sa_year_long) %in% mandatory_all))]
+pesticide_water <- bassin_versant_all_year[,c(1,2,which(names(bassin_versant_all_year) %in% mandatory_all))]
+
+
+### T T+ CMR
+pesticide_pre_itt <- readRDS("output/pesticide_pre_itt.rds")
+sa_class <- unique(pesticide_pre_itt[c('substance', 'classification')])
+sa_TTCMR <- sa_class$substance[which(sa_class$classification=="T, T+, CMR")]
+sa_TTCMR <- foo(sort(sa_TTCMR))
+sa_TTCMR[which(!(sa_TTCMR %in% substance_active$Nom.substance.active))] <- c("1,3-Dichloropropene","6-Benzyladenine","Abamectin",
+                                                                             "Alphamethrin","Aminotriazol","Azoxystrobin",
+                                                                             "Benfluralin","Benfuracarb","Beta-Cyfluthrin",
+                                                                             "Bifenthrin","Bromoxynil","Captan",
+                                                                             "Chlorpropham","Chlorpyrifos","Sintofen",
+                                                                             "Copper compounds","Cuivre de l'oxychlorure de cuivre","Cuivre du tallate de cuivre",
+                                                                             "Cycloxydim","Cyfluthrin","Deltamethrin",
+                                                                             "Diquat (dibromide)","Emamectin","Fenbutatin oxide",
+                                                                             "Fenoxycarb","Fenpropimorph","Fluazifop-P",
+                                                                             "Flumioxazin","Folpet","Formetanate",
+                                                                             "Gamma-cyhalothrin","Glufosinate","Indoxacarb",
+                                                                             "Ioxynil","Lambda-Cyhalothrin","Lenacil",
+                                                                             "Mancozeb","Maneb","Metazachlor",
+                                                                             "Methiocarb","Oxyfluorfen","Aluminium phosphide",
+                                                                             "Pyraclostrobin","Pyridaben","Pirimicarb",
+                                                                             "Tefluthrin","Thiacloprid","Thiencarbazone",
+                                                                             "Triflusulfuron","Zeta-Cypermethrin","Ziram")
+
+pesticide_soil_CMR <- itt_pesticide_year[,c(1,2,which(names(itt_pesticide_year) %in% mandatory_all & names(itt_pesticide_year) %in% sa_TTCMR))]
+pesticide_air_CMR <- df_sa_year_long[,c(1,2,which(names(df_sa_year_long) %in% mandatory_all & names(df_sa_year_long) %in% sa_TTCMR))]
+pesticide_water_CMR <- bassin_versant_all_year[,c(1,2,which(names(bassin_versant_all_year) %in% mandatory_all & names(bassin_versant_all_year) %in% sa_TTCMR))]
+
+saveRDS(pesticide_soil_CMR,"output/pesticide_soil_CMR.rds")
+saveRDS(pesticide_air_CMR,"output/pesticide_air_CMR.rds")
+saveRDS(pesticide_water_CMR,"output/pesticide_water_CMR.rds")
+
+
+average_soil_CMR <- pesticide_soil_CMR
+st_geometry(average_soil_CMR) <- NULL
+average_soil_CMR <- apply(average_soil_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
+pesticide_soil_CMR$all_itt <- average_soil_CMR
+pesticide_soil_CMR_average <- st_as_sf(data.frame(pesticide_soil_CMR %>% group_by(Postal_code) %>% summarise(mean_itt = mean(all_itt, na.rm=T))))
+
+ggplot(pesticide_soil_CMR_average)+
+  geom_sf(aes(fill=log(mean_itt+1)), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_minimal() +
+  coord_sf(xlim = c(25690,1181938),ylim=c(6022753,7227759))
+
+average_air_CMR <- pesticide_air_CMR
+st_geometry(average_air_CMR) <- NULL
+average_air_CMR <- apply(average_air_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
+average_air_CMR[average_air_CMR<0] <- 0
+pesticide_air_CMR$Concentration_total <- average_air_CMR
+pesticide_air_CMR_average <- st_as_sf(data.frame(data.frame(pesticide_air_CMR) %>% group_by(id,geometry) %>% summarise(mean_concentration = mean(Concentration_total, na.rm=T))))
+
+ggplot(pesticide_air_CMR_average)+
+  geom_sf(aes(fill=log(mean_concentration+1)), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_minimal()
+
+average_water_CMR <- pesticide_water_CMR
+st_geometry(average_water_CMR) <- NULL
+average_water_CMR <- apply(average_water_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
+pesticide_water_CMR$Concentration_total <- average_water_CMR
+pesticide_water_CMR_average <- st_as_sf(data.frame(pesticide_water_CMR %>% group_by(CdOH) %>% summarise(mean_concentration = mean(Concentration_total, na.rm=T))))
+
+ggplot(pesticide_water_CMR_average)+
+  geom_sf(aes(fill=log(mean_concentration+1)), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_minimal()
+
+saveRDS(pesticide_soil_CMR_average,"output/pesticide_soil_CMR_average.rds")
+saveRDS(pesticide_air_CMR_average,"output/pesticide_air_CMR_average.rds")
+saveRDS(pesticide_water_CMR_average,"output/pesticide_water_CMR_average.rds")
+
+

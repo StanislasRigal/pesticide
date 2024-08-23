@@ -328,18 +328,18 @@ for(i in 1:length(unique(pesticide_air_station_sub$Substance.active))){ #
 saveRDS(fr_air_all_year,"fr_air_all_year.rds")
 fr_air_all_year <- readRDS("output/fr_air_all_year.rds")
 
+fr_air_all_year$id <- 1:nrow(fr_air_all_year)
+
 fr_air_all_year_df <- fr_air_all_year
 st_geometry(fr_air_all_year_df) <- NULL
 fr_air_all_year_df$values <- NULL
-fr_air_all_year_df$id <- 1:nrow(fr_air_all_year_df)
 
-df_sa_year <- fr_air_all_year[,1:2]
-df_sa_year$id <- 1:nrow(df_sa_year)
-df_sa_year$values <- NULL
+df_sa_year <- fr_air_all_year[,c("id")]
 df_sa_year$year <- c(rep(2013:2022,length(unique(df_sa_year$id))/10),2013,2014)
 
-df_sa_year_long <- data.frame(df_sa_year %>% complete(id,year))[,1:2]
-df_sa_year_long <- merge(df_sa_year[,c("id")], df_sa_year_long, by=c("id"))
+df_sa_year_long <- data.frame(data.frame(df_sa_year) %>% complete(id,year))[,1:2]
+df_sa_year$year <- NULL
+df_sa_year_long <- merge(df_sa_year, df_sa_year_long, by=c("id"))
 
 for(i in 1:length(unique(pesticide_air_station_sub$Substance.active))){
   

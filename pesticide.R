@@ -504,7 +504,7 @@ ggplot(pesticide_ift_sau_plot)+
 
 
 
-# par an, avec classification=="T, T+, CMR"
+# par an
 
 pesticide_itt_year <- data.frame(pesticide_pre_itt %>% group_by(code_postal_acheteur,annee,substance) %>% summarise(sum_qsa_dhsa = sum(qsa_dhsa, na.rm=T), sum_qsa = sum(quantite_substance, na.rm=T)))
 pesticide_itt_year_sau <- merge(code_postal_insee_SAU,pesticide_itt_year,by.x="postal_code",by.y="code_postal_acheteur")
@@ -525,6 +525,9 @@ df_code_postal_unique <- merge(code_postal_unique[,c("postal_code")], df_code_po
 
 qsa_pesticide_year <- merge(df_code_postal_unique,qsa_pesticide_year,by=c("postal_code","annee"),all.x=TRUE)
 itt_pesticide_year <- merge(df_code_postal_unique,itt_pesticide_year,by=c("postal_code","annee"),all.x=TRUE)
+
+qsa_pesticide_year <- st_transform(qsa_pesticide_year,crs = "EPSG:2154")
+itt_pesticide_year <- st_transform(itt_pesticide_year,crs = "EPSG:2154")
 
 
 #saveRDS(qsa_pesticide_year,"output/qsa_pesticide_year.rds")
