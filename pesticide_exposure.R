@@ -212,8 +212,76 @@ ggplot(pesticide_water_CMR_average)+
   theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
   theme_minimal()
 
-saveRDS(pesticide_soil_CMR_average,"output/pesticide_soil_CMR_average.rds")
-saveRDS(pesticide_air_CMR_average,"output/pesticide_air_CMR_average.rds")
-saveRDS(pesticide_water_CMR_average,"output/pesticide_water_CMR_average.rds")
+#saveRDS(pesticide_soil_CMR_average,"output/pesticide_soil_CMR_average.rds")
+pesticide_soil_CMR_average <- readRDS("output/pesticide_soil_CMR_average.rds")
+#saveRDS(pesticide_air_CMR_average,"output/pesticide_air_CMR_average.rds")
+pesticide_air_CMR_average <- readRDS("output/pesticide_air_CMR_average.rds")
+#saveRDS(pesticide_water_CMR_average,"output/pesticide_water_CMR_average.rds")
+pesticide_water_CMR_average <- readRDS("output/pesticide_water_CMR_average.rds")
 
+# rescale values
 
+pesticide_soil_CMR_average$mean_itt[which(is.infinite(pesticide_soil_CMR_average$mean_itt))] <- NA
+threshold_soil <- quantile(pesticide_soil_CMR_average$mean_itt,0.995 ,na.rm = TRUE)
+pesticide_soil_CMR_average$mean_itt[which(pesticide_soil_CMR_average$mean_itt>threshold_soil)] <- threshold_soil
+pesticide_soil_CMR_average$mean_itt_scale <- scales::rescale(pesticide_soil_CMR_average$mean_itt)
+ggplot(pesticide_soil_CMR_average)+
+  geom_sf(aes(fill=mean_itt), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_minimal() +
+  coord_sf(xlim = c(25690,1181938),ylim=c(6022753,7227759))
+
+threshold_air <- quantile(pesticide_air_CMR_average$mean_concentration,0.995)
+pesticide_air_CMR_average$mean_concentration[which(pesticide_air_CMR_average$mean_concentration>threshold_air)] <- threshold_air
+pesticide_air_CMR_average$mean_concentration_scale <- scales::rescale(pesticide_air_CMR_average$mean_concentration)
+ggplot(pesticide_air_CMR_average)+
+  geom_sf(aes(fill=mean_concentration), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_minimal()
+
+threshold_water <- quantile(pesticide_water_CMR_average$mean_concentration,0.995)
+pesticide_water_CMR_average$mean_concentration[which(pesticide_water_CMR_average$mean_concentration>threshold_water)] <- threshold_water
+pesticide_water_CMR_average$mean_concentration_scale <- scales::rescale(pesticide_water_CMR_average$mean_concentration)
+ggplot(pesticide_water_CMR_average)+
+  geom_sf(aes(fill=mean_concentration), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_minimal()
+
+# combine maps
+
+pesticide_CMR_all <- pesticide_air_CMR_average
+pesticide_soil_CMR_average <- st_transform(pesticide_soil_CMR_average,st_crs(pesticide_CMR_all))
+pesticide_water_CMR_average <- st_transform(pesticide_water_CMR_average,st_crs(pesticide_CMR_all))
+
+pesticide_CMR_all_df <- st_intersection(pesticide_CMR_all,pesticide_soil_CMR_average[,c("mean_itt_scale")])
+pesticide_CMR_all_df$area <- as.numeric(st_area(pesticide_CMR_all_df))
+pesticide_CMR_all_df$mean_itt_scale_area <- pesticide_CMR_all_df$mean_itt_scale*pesticide_CMR_all_df$area
+pesticide_CMR_all_df <- data.frame(data.frame(pesticide_CMR_all_df) %>% group_by(id) %>% summarise(sum_itt_area = sum(mean_itt_scale_area, na.rm=TRUE)))
+pesticide_CMR_all$area <- as.numeric(st_area(pesticide_CMR_all))
+pesticide_CMR_all$mean_itt_scale <- pesticide_CMR_all_df$sum_itt_area/pesticide_CMR_all$area
+
+pesticide_CMR_all_df <- st_intersection(pesticide_CMR_all[,c("id")],pesticide_water_CMR_average[,c("mean_concentration_scale")])
+pesticide_CMR_all_df$area <- as.numeric(st_area(pesticide_CMR_all_df))
+pesticide_CMR_all_df$mean_concentration_scale_area <- pesticide_CMR_all_df$mean_concentration_scale*pesticide_CMR_all_df$area
+pesticide_CMR_all_df <- data.frame(data.frame(pesticide_CMR_all_df) %>% group_by(id) %>% summarise(sum_concentration_area = sum(mean_concentration_scale_area, na.rm=TRUE)))
+pesticide_CMR_all_df_toadd <- data.frame(id=which(!(pesticide_CMR_all$id %in% pesticide_CMR_all_df$id)),sum_concentration_area=NA)
+pesticide_CMR_all_df <- rbind(pesticide_CMR_all_df,pesticide_CMR_all_df_toadd)
+pesticide_CMR_all_df <- with(pesticide_CMR_all_df, pesticide_CMR_all_df[order(id),])
+pesticide_CMR_all$mean_concentration_scale_water <- pesticide_CMR_all_df$sum_concentration_area/pesticide_CMR_all$area
+
+pesticide_CMR_all$all_pesticide_exposure <- pesticide_CMR_all$mean_concentration_scale + pesticide_CMR_all$mean_itt_scale + pesticide_CMR_all$mean_concentration_scale_water
+ggplot(pesticide_CMR_all)+
+  geom_sf(aes(fill=all_pesticide_exposure), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_minimal()
+
+pesticide_CMR_all$mean_concentration <- pesticide_CMR_all$area <- NULL
+pesticide_soil_CMR_average <- pesticide_soil_CMR_average[which(as.numeric(str_sub(pesticide_soil_CMR_average$Postal_code,1,2)) < 96),]
+
+# save all
+
+#saveRDS(pesticide_CMR_all,"output/pesticide_CMR_all.rds")
+st_write(pesticide_CMR_all,dsn="output/pesticide_CMR_all.gpkg")
+st_write(pesticide_soil_CMR_average,dsn="output/pesticide_CMR_soil.gpkg")
+st_write(pesticide_air_CMR_average,dsn="output/pesticide_CMR_air.gpkg")
+st_write(pesticide_water_CMR_average,dsn="output/pesticide_CMR_water.gpkg")
