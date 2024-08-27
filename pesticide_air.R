@@ -8,6 +8,23 @@ pesticide_raw <- pesticide_raw[which(!(pesticide_raw$AASQA %in% c("HAWA MAYOTTE"
 
 code_postal <- sf::st_read("raw_data/correspondance-code-insee-code-postal.geojson")
 
+# measurement sites
+
+station_site <- st_as_sf(distinct(pesticide_raw[,c("xlamb93","ylamb93")]), coords = c("xlamb93","ylamb93"), remove = FALSE, crs="EPSG:2154")
+
+code_postal_site <- code_postal[which(!(code_postal$nom_region %in% c("GUYANE","MAYOTTE","GUADELOUPE","MARTINIQUE","REUNION"))),]
+code_postal_outline <- st_union(code_postal_site)
+code_postal_outline_reproj <- st_transform(code_postal_outline,crs="EPSG:2154")
+
+ggplot(code_postal_outline_reproj)+
+  geom_sf() + geom_sf(data=station_site) + theme_minimal()
+
+ggsave("output/figure_station_air.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
+
+
 
 # average pesticide data by postal code
 

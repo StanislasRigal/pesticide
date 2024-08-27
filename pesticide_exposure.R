@@ -227,25 +227,41 @@ pesticide_soil_CMR_average$mean_itt[which(pesticide_soil_CMR_average$mean_itt>th
 pesticide_soil_CMR_average$mean_itt_scale <- scales::rescale(pesticide_soil_CMR_average$mean_itt)
 ggplot(pesticide_soil_CMR_average)+
   geom_sf(aes(fill=mean_itt), colour=NA) +
-  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
-  theme_minimal() +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void() +
   coord_sf(xlim = c(25690,1181938),ylim=c(6022753,7227759))
+
+ggsave("output/figure_sa_use.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
 
 threshold_air <- quantile(pesticide_air_CMR_average$mean_concentration,0.995)
 pesticide_air_CMR_average$mean_concentration[which(pesticide_air_CMR_average$mean_concentration>threshold_air)] <- threshold_air
 pesticide_air_CMR_average$mean_concentration_scale <- scales::rescale(pesticide_air_CMR_average$mean_concentration)
 ggplot(pesticide_air_CMR_average)+
   geom_sf(aes(fill=mean_concentration), colour=NA) +
-  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
-  theme_minimal()
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+ggsave("output/figure_sa_air.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
 
 threshold_water <- quantile(pesticide_water_CMR_average$mean_concentration,0.995)
 pesticide_water_CMR_average$mean_concentration[which(pesticide_water_CMR_average$mean_concentration>threshold_water)] <- threshold_water
 pesticide_water_CMR_average$mean_concentration_scale <- scales::rescale(pesticide_water_CMR_average$mean_concentration)
 ggplot(pesticide_water_CMR_average)+
   geom_sf(aes(fill=mean_concentration), colour=NA) +
-  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
-  theme_minimal()
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+ggsave("output/figure_sa_water.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
+
 
 # combine maps
 
@@ -272,8 +288,13 @@ pesticide_CMR_all$mean_concentration_scale_water <- pesticide_CMR_all_df$sum_con
 pesticide_CMR_all$all_pesticide_exposure <- pesticide_CMR_all$mean_concentration_scale + pesticide_CMR_all$mean_itt_scale + pesticide_CMR_all$mean_concentration_scale_water
 ggplot(pesticide_CMR_all)+
   geom_sf(aes(fill=all_pesticide_exposure), colour=NA) +
-  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
-  theme_minimal()
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+ggsave("output/figure_sa_combined.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
 
 pesticide_CMR_all$mean_concentration <- pesticide_CMR_all$area <- NULL
 pesticide_soil_CMR_average <- pesticide_soil_CMR_average[which(as.numeric(str_sub(pesticide_soil_CMR_average$Postal_code,1,2)) < 96),]
@@ -285,3 +306,29 @@ st_write(pesticide_CMR_all,dsn="output/pesticide_CMR_all.gpkg")
 st_write(pesticide_soil_CMR_average,dsn="output/pesticide_CMR_soil.gpkg")
 st_write(pesticide_air_CMR_average,dsn="output/pesticide_CMR_air.gpkg")
 st_write(pesticide_water_CMR_average,dsn="output/pesticide_CMR_water.gpkg")
+
+
+# technical valisation with adonis IFT from solagro https://solagro.org/nos-domaines-d-intervention/agroecologie/carte-pesticides-adonis
+
+adonis_df <- read.csv2("/home/rigal/Documents/pesticide/raw_data/pack_solagro_adonis_2021/pack_solagro_adonis_2020-2021_csv_utf8/fr-324510908-adonis-ift-2021-v31082023.csv")
+adonis_df$insee_com <- str_pad(adonis_df$insee_com, 5, pad = "0")
+  
+code_postal <- sf::st_read("raw_data/georef-france-commune-arrondissement-municipal-millesime.geojson")
+code_postal_2024 <- code_postal[which(code_postal$year==2024),]
+code_postal_metro <- code_postal_2024[which(!(code_postal_2024$reg_name %in% c("Guadeloupe","Martinique","La Réunion","Mayotte","Île de Clipperton",
+                                                                                 "Guyane","Saint-Pierre-et-Miquelon","Terres australes et antarctiques françaises",
+                                                                                 "Wallis et Futuna","Saint-Martin","Saint-Barthélemy"))),]
+code_postal_metro <- st_transform(code_postal_metro,crs="EPSG:2154")
+
+#saveRDS(code_postal_metro,"output/code_postal_metro.rds")
+code_postal_metro <- readRDS("output/code_postal_metro.rds")
+code_postal_metro <- code_postal_metro[,c("com_code")]
+code_postal_metro$com_code <- unlist(code_postal_metro$com_code)
+
+adonis_sf <- merge(code_postal_metro,adonis_df, by.x="com_code",by.y="insee_com")
+adonis_sf$ift_t <- as.numeric(adonis_sf$ift_t)
+
+ggplot(adonis_sf)+
+  geom_sf(aes(fill=ift_t), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_void()
