@@ -308,11 +308,202 @@ st_write(pesticide_air_CMR_average,dsn="output/pesticide_CMR_air.gpkg")
 st_write(pesticide_water_CMR_average,dsn="output/pesticide_CMR_water.gpkg")
 
 
-# technical valisation with adonis IFT from solagro https://solagro.org/nos-domaines-d-intervention/agroecologie/carte-pesticides-adonis
 
-adonis_df <- read.csv2("/home/rigal/Documents/pesticide/raw_data/pack_solagro_adonis_2021/pack_solagro_adonis_2020-2021_csv_utf8/fr-324510908-adonis-ift-2021-v31082023.csv")
-adonis_df$insee_com <- str_pad(adonis_df$insee_com, 5, pad = "0")
-  
+# maps by year
+
+
+pesticide_soil_CMR <- readRDS("output/pesticide_soil_CMR.rds")
+pesticide_air_CMR <- readRDS("output/pesticide_air_CMR.rds")
+pesticide_water_CMR <- readRDS("output/pesticide_water_CMR.rds")
+
+
+average_soil_CMR <- pesticide_soil_CMR
+st_geometry(average_soil_CMR) <- NULL
+average_soil_CMR <- apply(average_soil_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
+pesticide_soil_CMR$all_itt <- average_soil_CMR
+pesticide_soil_CMR_average_year <- st_as_sf(data.frame(data.frame(pesticide_soil_CMR) %>% group_by(Postal_code,geometry,Annee) %>% summarise(mean_itt = mean(all_itt, na.rm=T))))
+
+pesticide_soil_CMR_average_year$mean_itt[which(is.infinite(pesticide_soil_CMR_average_year$mean_itt))] <- NA
+threshold_soil <- quantile(pesticide_soil_CMR_average_year$mean_itt,0.995 ,na.rm = TRUE)
+pesticide_soil_CMR_average_year$mean_itt[which(pesticide_soil_CMR_average_year$mean_itt>threshold_soil)] <- threshold_soil
+#pesticide_soil_CMR_average_year$mean_itt_scale <- scales::rescale(pesticide_soil_CMR_average_year$mean_itt)
+
+ggplot(pesticide_soil_CMR_average_year[which(pesticide_soil_CMR_average_year$Annee==2013),])+
+  geom_sf(aes(fill=mean_itt), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_minimal() +
+  coord_sf(xlim = c(25690,1181938),ylim=c(6022753,7227759))
+
+average_air_CMR <- pesticide_air_CMR
+st_geometry(average_air_CMR) <- NULL
+average_air_CMR <- apply(average_air_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
+average_air_CMR[average_air_CMR<0] <- 0
+pesticide_air_CMR$Concentration_total <- average_air_CMR
+pesticide_air_CMR_average_year <- st_as_sf(data.frame(data.frame(pesticide_air_CMR) %>% group_by(id,geometry,year) %>% summarise(mean_concentration = mean(Concentration_total, na.rm=T))))
+
+threshold_air <- quantile(pesticide_air_CMR_average_year$mean_concentration,0.995)
+pesticide_air_CMR_average_year$mean_concentration[which(pesticide_air_CMR_average_year$mean_concentration>threshold_air)] <- threshold_air
+#pesticide_air_CMR_average$mean_concentration_scale <- scales::rescale(pesticide_air_CMR_average$mean_concentration)
+
+ggplot(pesticide_air_CMR_average_year[which(pesticide_air_CMR_average_year$year==2013),])+
+  geom_sf(aes(fill=mean_concentration), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_minimal()
+
+average_water_CMR <- pesticide_water_CMR
+st_geometry(average_water_CMR) <- NULL
+average_water_CMR <- apply(average_water_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
+pesticide_water_CMR$Concentration_total <- average_water_CMR
+pesticide_water_CMR_average_year <- st_as_sf(data.frame(data.frame(pesticide_water_CMR) %>% group_by(CdOH,geometry,year) %>% summarise(mean_concentration = mean(Concentration_total, na.rm=T))))
+
+threshold_water <- quantile(pesticide_water_CMR_average_year$mean_concentration,0.995)
+pesticide_water_CMR_average_year$mean_concentration[which(pesticide_water_CMR_average_year$mean_concentration>threshold_water)] <- threshold_water
+#pesticide_water_CMR_average_year$mean_concentration_scale <- scales::rescale(pesticide_water_CMR_average_year$mean_concentration)
+
+ggplot(pesticide_water_CMR_average_year[which(pesticide_water_CMR_average_year$year==2013),])+
+  geom_sf(aes(fill=mean_concentration), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_minimal()
+
+names(pesticide_soil_CMR_average_year)[2] <- "year"
+
+st_write(pesticide_soil_CMR_average_year,dsn="output/pesticide_CMR_soil_year.gpkg")
+st_write(pesticide_air_CMR_average_year,dsn="output/pesticide_CMR_air_year.gpkg")
+st_write(pesticide_water_CMR_average_year,dsn="output/pesticide_CMR_water_year.gpkg")
+
+
+
+# technical validation with adonis IFT from solagro https://solagro.org/nos-domaines-d-intervention/agroecologie/carte-pesticides-adonis
+
+## maps for 2020 and 2021
+
+max_soil <- max(na.omit(pesticide_soil_CMR_average_year$mean_itt))*2
+max_air <- max(pesticide_air_CMR_average_year$mean_concentration)*2
+max_water <- max(pesticide_water_CMR_average_year$mean_concentration)*2
+
+
+
+pesticide_CMR_2020 <- pesticide_air_CMR_average_year[which(pesticide_air_CMR_average_year$year==2020),]
+pesticide_CMR_2020$mean_concentration_scale <- scales::rescale(pesticide_CMR_2020$mean_concentration, from=c(0,max_air))
+
+pesticide_soil_CMR_average_2020 <- st_transform(pesticide_soil_CMR_average_year[which(pesticide_soil_CMR_average_year$year==2020),],st_crs(pesticide_CMR_2020))
+pesticide_soil_CMR_average_2020$mean_itt_scale <- scales::rescale(pesticide_soil_CMR_average_2020$mean_itt, from = c(0,max_soil))
+pesticide_water_CMR_average_2020 <- st_transform(pesticide_water_CMR_average_year[which(pesticide_water_CMR_average_year$year==2020),],st_crs(pesticide_CMR_2020))
+pesticide_water_CMR_average_2020$mean_concentration_scale <- scales::rescale(pesticide_water_CMR_average_2020$mean_concentration, from = c(0,max_water))
+
+pesticide_CMR_2020_df <- st_intersection(pesticide_CMR_2020,pesticide_soil_CMR_average_2020[,c("mean_itt","mean_itt_scale")])
+pesticide_CMR_2020_df$area <- as.numeric(st_area(pesticide_CMR_2020_df))
+pesticide_CMR_2020_df$mean_itt_area <- pesticide_CMR_2020_df$mean_itt*pesticide_CMR_2020_df$area
+pesticide_CMR_2020_df$mean_itt_scale_area <- pesticide_CMR_2020_df$mean_itt_scale*pesticide_CMR_2020_df$area
+pesticide_CMR_2020_df <- data.frame(data.frame(pesticide_CMR_2020_df) %>% group_by(id) %>% summarise(sum_itt_area = sum(mean_itt_area, na.rm=TRUE), sum_itt_scale_area = sum(mean_itt_scale_area, na.rm=TRUE)))
+pesticide_CMR_2020$area <- as.numeric(st_area(pesticide_CMR_2020))
+pesticide_CMR_2020$mean_itt <- pesticide_CMR_2020_df$sum_itt_area/pesticide_CMR_2020$area
+pesticide_CMR_2020$mean_itt_scale <- pesticide_CMR_2020_df$sum_itt_scale_area/pesticide_CMR_2020$area
+
+pesticide_CMR_2020_df <- st_intersection(pesticide_CMR_2020[,c("id")],pesticide_water_CMR_average_2020[,c("mean_concentration","mean_concentration_scale")])
+pesticide_CMR_2020_df$area <- as.numeric(st_area(pesticide_CMR_2020_df))
+pesticide_CMR_2020_df$mean_concentration_area <- pesticide_CMR_2020_df$mean_concentration*pesticide_CMR_2020_df$area
+pesticide_CMR_2020_df$mean_concentration_scale_area <- pesticide_CMR_2020_df$mean_concentration_scale*pesticide_CMR_2020_df$area
+pesticide_CMR_2020_df <- data.frame(data.frame(pesticide_CMR_2020_df) %>% group_by(id) %>% summarise(sum_concentration_area = sum(mean_concentration_area, na.rm=TRUE), sum_concentration_scale_area = sum(mean_concentration_scale_area, na.rm=TRUE)))
+pesticide_CMR_2020_df_toadd <- data.frame(id=which(!(pesticide_CMR_2020$id %in% pesticide_CMR_2020_df$id)),sum_concentration_area=NA, sum_concentration_scale_area=NA)
+pesticide_CMR_2020_df <- rbind(pesticide_CMR_2020_df,pesticide_CMR_2020_df_toadd)
+pesticide_CMR_2020_df <- with(pesticide_CMR_2020_df, pesticide_CMR_2020_df[order(id),])
+pesticide_CMR_2020$mean_concentration_water <- pesticide_CMR_2020_df$sum_concentration_area/pesticide_CMR_2020$area
+pesticide_CMR_2020$mean_concentration_scale_water <- pesticide_CMR_2020_df$sum_concentration_scale_area/pesticide_CMR_2020$area
+
+pesticide_CMR_2020$all_pesticide_exposure <- pesticide_CMR_2020$mean_concentration_scale + pesticide_CMR_2020$mean_itt_scale + pesticide_CMR_2020$mean_concentration_scale_water
+
+
+saveRDS(pesticide_CMR_2020,"output/pesticide_CMR_2020.rds")
+
+ggplot(pesticide_CMR_2020)+
+  geom_sf(aes(fill=all_pesticide_exposure), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+
+pesticide_CMR_2021 <- pesticide_air_CMR_average_year[which(pesticide_air_CMR_average_year$year==2021),]
+pesticide_CMR_2021$mean_concentration_scale <- scales::rescale(pesticide_CMR_2021$mean_concentration, from=c(0,max_air))
+
+pesticide_soil_CMR_average_2021 <- st_transform(pesticide_soil_CMR_average_year[which(pesticide_soil_CMR_average_year$year==2021),],st_crs(pesticide_CMR_2021))
+pesticide_soil_CMR_average_2021$mean_itt_scale <- scales::rescale(pesticide_soil_CMR_average_2021$mean_itt, from = c(0,max_soil))
+pesticide_water_CMR_average_2021 <- st_transform(pesticide_water_CMR_average_year[which(pesticide_water_CMR_average_year$year==2021),],st_crs(pesticide_CMR_2021))
+pesticide_water_CMR_average_2021$mean_concentration_scale <- scales::rescale(pesticide_water_CMR_average_2021$mean_concentration, from = c(0,max_water))
+
+pesticide_CMR_2021_df <- st_intersection(pesticide_CMR_2021,pesticide_soil_CMR_average_2021[,c("mean_itt","mean_itt_scale")])
+pesticide_CMR_2021_df$area <- as.numeric(st_area(pesticide_CMR_2021_df))
+pesticide_CMR_2021_df$mean_itt_area <- pesticide_CMR_2021_df$mean_itt*pesticide_CMR_2021_df$area
+pesticide_CMR_2021_df$mean_itt_scale_area <- pesticide_CMR_2021_df$mean_itt_scale*pesticide_CMR_2021_df$area
+pesticide_CMR_2021_df <- data.frame(data.frame(pesticide_CMR_2021_df) %>% group_by(id) %>% summarise(sum_itt_area = sum(mean_itt_area, na.rm=TRUE), sum_itt_scale_area = sum(mean_itt_scale_area, na.rm=TRUE)))
+pesticide_CMR_2021$area <- as.numeric(st_area(pesticide_CMR_2021))
+pesticide_CMR_2021$mean_itt <- pesticide_CMR_2021_df$sum_itt_area/pesticide_CMR_2021$area
+pesticide_CMR_2021$mean_itt_scale <- pesticide_CMR_2021_df$sum_itt_scale_area/pesticide_CMR_2021$area
+
+pesticide_CMR_2021_df <- st_intersection(pesticide_CMR_2021[,c("id")],pesticide_water_CMR_average_2021[,c("mean_concentration","mean_concentration_scale")])
+pesticide_CMR_2021_df$area <- as.numeric(st_area(pesticide_CMR_2021_df))
+pesticide_CMR_2021_df$mean_concentration_area <- pesticide_CMR_2021_df$mean_concentration*pesticide_CMR_2021_df$area
+pesticide_CMR_2021_df$mean_concentration_scale_area <- pesticide_CMR_2021_df$mean_concentration_scale*pesticide_CMR_2021_df$area
+pesticide_CMR_2021_df <- data.frame(data.frame(pesticide_CMR_2021_df) %>% group_by(id) %>% summarise(sum_concentration_area = sum(mean_concentration_area, na.rm=TRUE), sum_concentration_scale_area = sum(mean_concentration_scale_area, na.rm=TRUE)))
+pesticide_CMR_2021_df_toadd <- data.frame(id=which(!(pesticide_CMR_2021$id %in% pesticide_CMR_2021_df$id)),sum_concentration_area=NA, sum_concentration_scale_area=NA)
+pesticide_CMR_2021_df <- rbind(pesticide_CMR_2021_df,pesticide_CMR_2021_df_toadd)
+pesticide_CMR_2021_df <- with(pesticide_CMR_2021_df, pesticide_CMR_2021_df[order(id),])
+pesticide_CMR_2021$mean_concentration_water <- pesticide_CMR_2021_df$sum_concentration_area/pesticide_CMR_2021$area
+pesticide_CMR_2021$mean_concentration_scale_water <- pesticide_CMR_2021_df$sum_concentration_scale_area/pesticide_CMR_2021$area
+
+pesticide_CMR_2021$all_pesticide_exposure <- pesticide_CMR_2021$mean_concentration_scale + pesticide_CMR_2021$mean_itt_scale + pesticide_CMR_2021$mean_concentration_scale_water
+
+
+saveRDS(pesticide_CMR_2021,"output/pesticide_CMR_2021.rds")
+
+ggplot(pesticide_CMR_2021)+
+  geom_sf(aes(fill=all_pesticide_exposure), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+
+
+
+pesticide_CMR_2022 <- pesticide_air_CMR_average_year[which(pesticide_air_CMR_average_year$year==2022),]
+pesticide_CMR_2022$mean_concentration_scale <- scales::rescale(pesticide_CMR_2022$mean_concentration, from=c(0,max_air))
+
+pesticide_soil_CMR_average_2022 <- st_transform(pesticide_soil_CMR_average_year[which(pesticide_soil_CMR_average_year$year==2022),],st_crs(pesticide_CMR_2022))
+pesticide_soil_CMR_average_2022$mean_itt_scale <- scales::rescale(pesticide_soil_CMR_average_2022$mean_itt, from = c(0,max_soil))
+pesticide_water_CMR_average_2022 <- st_transform(pesticide_water_CMR_average_year[which(pesticide_water_CMR_average_year$year==2022),],st_crs(pesticide_CMR_2022))
+pesticide_water_CMR_average_2022$mean_concentration_scale <- scales::rescale(pesticide_water_CMR_average_2022$mean_concentration, from = c(0,max_water))
+
+pesticide_CMR_2022_df <- st_intersection(pesticide_CMR_2022,pesticide_soil_CMR_average_2022[,c("mean_itt","mean_itt_scale")])
+pesticide_CMR_2022_df$area <- as.numeric(st_area(pesticide_CMR_2022_df))
+pesticide_CMR_2022_df$mean_itt_area <- pesticide_CMR_2022_df$mean_itt*pesticide_CMR_2022_df$area
+pesticide_CMR_2022_df$mean_itt_scale_area <- pesticide_CMR_2022_df$mean_itt_scale*pesticide_CMR_2022_df$area
+pesticide_CMR_2022_df <- data.frame(data.frame(pesticide_CMR_2022_df) %>% group_by(id) %>% summarise(sum_itt_area = sum(mean_itt_area, na.rm=TRUE), sum_itt_scale_area = sum(mean_itt_scale_area, na.rm=TRUE)))
+pesticide_CMR_2022$area <- as.numeric(st_area(pesticide_CMR_2022))
+pesticide_CMR_2022$mean_itt <- pesticide_CMR_2022_df$sum_itt_area/pesticide_CMR_2022$area
+pesticide_CMR_2022$mean_itt_scale <- pesticide_CMR_2022_df$sum_itt_scale_area/pesticide_CMR_2022$area
+
+pesticide_CMR_2022_df <- st_intersection(pesticide_CMR_2022[,c("id")],pesticide_water_CMR_average_2022[,c("mean_concentration","mean_concentration_scale")])
+pesticide_CMR_2022_df$area <- as.numeric(st_area(pesticide_CMR_2022_df))
+pesticide_CMR_2022_df$mean_concentration_area <- pesticide_CMR_2022_df$mean_concentration*pesticide_CMR_2022_df$area
+pesticide_CMR_2022_df$mean_concentration_scale_area <- pesticide_CMR_2022_df$mean_concentration_scale*pesticide_CMR_2022_df$area
+pesticide_CMR_2022_df <- data.frame(data.frame(pesticide_CMR_2022_df) %>% group_by(id) %>% summarise(sum_concentration_area = sum(mean_concentration_area, na.rm=TRUE), sum_concentration_scale_area = sum(mean_concentration_scale_area, na.rm=TRUE)))
+pesticide_CMR_2022_df_toadd <- data.frame(id=which(!(pesticide_CMR_2022$id %in% pesticide_CMR_2022_df$id)),sum_concentration_area=NA, sum_concentration_scale_area=NA)
+pesticide_CMR_2022_df <- rbind(pesticide_CMR_2022_df,pesticide_CMR_2022_df_toadd)
+pesticide_CMR_2022_df <- with(pesticide_CMR_2022_df, pesticide_CMR_2022_df[order(id),])
+pesticide_CMR_2022$mean_concentration_water <- pesticide_CMR_2022_df$sum_concentration_area/pesticide_CMR_2022$area
+pesticide_CMR_2022$mean_concentration_scale_water <- pesticide_CMR_2022_df$sum_concentration_scale_area/pesticide_CMR_2022$area
+
+pesticide_CMR_2022$all_pesticide_exposure <- pesticide_CMR_2022$mean_concentration_scale + pesticide_CMR_2022$mean_itt_scale + pesticide_CMR_2022$mean_concentration_scale_water
+
+
+saveRDS(pesticide_CMR_2022,"output/pesticide_CMR_2022.rds")
+
+ggplot(pesticide_CMR_2022)+
+  geom_sf(aes(fill=all_pesticide_exposure), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+
+## adonis data
+
 code_postal <- sf::st_read("raw_data/georef-france-commune-arrondissement-municipal-millesime.geojson")
 code_postal_2024 <- code_postal[which(code_postal$year==2024),]
 code_postal_metro <- code_postal_2024[which(!(code_postal_2024$reg_name %in% c("Guadeloupe","Martinique","La Réunion","Mayotte","Île de Clipperton",
@@ -325,10 +516,166 @@ code_postal_metro <- readRDS("output/code_postal_metro.rds")
 code_postal_metro <- code_postal_metro[,c("com_code")]
 code_postal_metro$com_code <- unlist(code_postal_metro$com_code)
 
+adonis_df <- read.csv2("/home/rigal/Documents/pesticide/raw_data/pack_solagro_adonis_2021/pack_solagro_adonis_2020-2021_csv_utf8/fr-324510908-adonis-ift-2021-v31082023.csv")
+adonis_df$insee_com <- str_pad(adonis_df$insee_com, 5, pad = "0")
+
 adonis_sf <- merge(code_postal_metro,adonis_df, by.x="com_code",by.y="insee_com")
 adonis_sf$ift_t <- as.numeric(adonis_sf$ift_t)
+adonis_sf$ift_t_hbc <- as.numeric(adonis_sf$ift_t_hbc)
 
 ggplot(adonis_sf)+
   geom_sf(aes(fill=ift_t), colour=NA) +
   theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
   theme_void()
+
+ggplot(adonis_sf)+
+  geom_sf(aes(fill=ift_t), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+ggplot(adonis_sf)+
+  geom_sf(aes(fill=ift_t_hbc), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+ggsave("output/figure_adonis.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
+
+
+pesticide_CMR_all <- readRDS("output/pesticide_CMR_all.rds")
+
+pesticide_CMR_all_check <- st_transform(adonis_sf,st_crs(pesticide_CMR_all))
+pesticide_CMR_all_check <- st_intersection(pesticide_CMR_all,pesticide_CMR_all_check[,c("ift_t","ift_t_hbc")])
+pesticide_CMR_all_check$area <- as.numeric(st_area(pesticide_CMR_all_check))
+pesticide_CMR_all_check$ift_t_area <- pesticide_CMR_all_check$ift_t*pesticide_CMR_all_check$area
+pesticide_CMR_all_check$ift_t_hbc_area <- pesticide_CMR_all_check$ift_t_hbc*pesticide_CMR_all_check$area
+pesticide_CMR_all_check_df <- data.frame(data.frame(pesticide_CMR_all_check) %>% group_by(id) %>% summarise(sum_ift_area = sum(ift_t_area, na.rm=TRUE), sum_ift_hbc_area = sum(ift_t_hbc_area, na.rm=TRUE)))
+pesticide_CMR_all_check_sf <- pesticide_CMR_all
+pesticide_CMR_all_check_sf$area <- as.numeric(st_area(pesticide_CMR_all_check_sf))
+
+pesticide_CMR_all_check_df_toadd <- data.frame(id=which(!(pesticide_CMR_all_check_sf$id %in% pesticide_CMR_all_check_df$id)),sum_ift_area=NA,sum_ift_hbc_area=NA)
+pesticide_CMR_all_check_df <- rbind(pesticide_CMR_all_check_df,pesticide_CMR_all_check_df_toadd)
+pesticide_CMR_all_check_df <- with(pesticide_CMR_all_check_df, pesticide_CMR_all_check_df[order(id),])
+
+pesticide_CMR_all_check_sf$mean_ift <- pesticide_CMR_all_check_df$sum_ift_area/pesticide_CMR_all_check_sf$area
+pesticide_CMR_all_check_sf$mean_ift_hbc <- pesticide_CMR_all_check_df$sum_ift_hbc_area/pesticide_CMR_all_check_sf$area
+
+saveRDS(pesticide_CMR_all_check_sf,"output/pesticide_CMR_all_check_sf.rds")
+
+cor.test(pesticide_CMR_all_check_sf$all_pesticide_exposure,pesticide_CMR_all_check_sf$mean_ift)
+cor.test(pesticide_CMR_all_check_sf$mean_concentration_scale,pesticide_CMR_all_check_sf$mean_ift)
+cor.test(pesticide_CMR_all_check_sf$mean_itt_scale,pesticide_CMR_all_check_sf$mean_ift)
+cor.test(pesticide_CMR_all_check_sf$mean_concentration_scale_water,pesticide_CMR_all_check_sf$mean_ift)
+cor.test(pesticide_CMR_all_check_sf$all_pesticide_exposure,pesticide_CMR_all_check_sf$mean_ift_hbc)
+cor.test(pesticide_CMR_all_check_sf$mean_concentration_scale,pesticide_CMR_all_check_sf$mean_ift_hbc)
+cor.test(pesticide_CMR_all_check_sf$mean_itt_scale,pesticide_CMR_all_check_sf$mean_ift_hbc)
+cor.test(pesticide_CMR_all_check_sf$mean_concentration_scale_water,pesticide_CMR_all_check_sf$mean_ift_hbc)
+
+
+adonis2020_df <- read.csv2("/home/rigal/Documents/pesticide/raw_data/pack_solagro_adonis_2021/pack_solagro_adonis_2020-2021_csv_utf8/fr-324510908-adonis-ift-2020-v31082023.csv")
+adonis2020_df$insee_com <- str_pad(adonis2020_df$insee_com, 5, pad = "0")
+
+adonis2020_sf <- merge(code_postal_metro,adonis2020_df, by.x="com_code",by.y="insee_com")
+adonis2020_sf$ift_t <- as.numeric(adonis2020_sf$ift_t)
+adonis2020_sf$ift_t_hbc <- as.numeric(adonis2020_sf$ift_t_hbc)
+
+pesticide_CMR_all_check2020 <- st_transform(adonis2020_sf,st_crs(pesticide_CMR_all))
+pesticide_CMR_all_check2020 <- st_intersection(pesticide_CMR_all,pesticide_CMR_all_check2020[,c("ift_t","ift_t_hbc")])
+pesticide_CMR_all_check2020$area <- as.numeric(st_area(pesticide_CMR_all_check2020))
+pesticide_CMR_all_check2020$ift_t_area <- pesticide_CMR_all_check2020$ift_t*pesticide_CMR_all_check2020$area
+pesticide_CMR_all_check2020$ift_t_hbc_area <- pesticide_CMR_all_check2020$ift_t_hbc*pesticide_CMR_all_check2020$area
+pesticide_CMR_all_check2020_df <- data.frame(data.frame(pesticide_CMR_all_check2020) %>% group_by(id) %>% summarise(sum_ift_area = sum(ift_t_area, na.rm=TRUE), sum_ift_hbc_area = sum(ift_t_hbc_area, na.rm=TRUE)))
+pesticide_CMR_all_check2020_sf <- pesticide_CMR_all
+pesticide_CMR_all_check2020_sf$area <- as.numeric(st_area(pesticide_CMR_all_check2020_sf))
+
+pesticide_CMR_all_check2020_df_toadd <- data.frame(id=which(!(pesticide_CMR_all_check2020_sf$id %in% pesticide_CMR_all_check2020_df$id)),sum_ift_area=NA,sum_ift_hbc_area=NA)
+pesticide_CMR_all_check2020_df <- rbind(pesticide_CMR_all_check2020_df,pesticide_CMR_all_check2020_df_toadd)
+pesticide_CMR_all_check2020_df <- with(pesticide_CMR_all_check2020_df, pesticide_CMR_all_check2020_df[order(id),])
+
+pesticide_CMR_all_check2020_sf$mean_ift <- pesticide_CMR_all_check2020_df$sum_ift_area/pesticide_CMR_all_check2020_sf$area
+pesticide_CMR_all_check2020_sf$mean_ift_hbc <- pesticide_CMR_all_check2020_df$sum_ift_hbc_area/pesticide_CMR_all_check2020_sf$area
+
+saveRDS(pesticide_CMR_all_check2020_sf,"output/pesticide_CMR_all_check2020_sf.rds")
+
+
+
+## map comparison
+
+code_postal <- sf::st_read("raw_data/correspondance-code-insee-code-postal.geojson")
+
+fr <- st_transform(code_postal[which(!(code_postal$nom_region %in% c("GUYANE","MAYOTTE","GUADELOUPE","MARTINIQUE","REUNION"))),],crs = "EPSG:2154" ) 
+
+pesticide_CMR_all_check_rast <- pesticide_CMR_all_check_sf[,c("all_pesticide_exposure","mean_ift","mean_ift_hbc")]
+pesticide_CMR_all_check_rast$all_pesticide_exposure <- scales::rescale(pesticide_CMR_all_check_rast$all_pesticide_exposure)
+pesticide_CMR_all_check_rast$mean_ift <- scales::rescale(pesticide_CMR_all_check_rast$mean_ift)
+pesticide_CMR_all_check_rast$mean_ift_hbc <- scales::rescale(pesticide_CMR_all_check_rast$mean_ift_hbc)
+pesticide_CMR_all_check_rast <- st_rasterize(pesticide_CMR_all_check_rast, st_crop(st_as_stars(st_bbox(fr),dx=20000),fr))
+
+write_stars(pesticide_CMR_all_check_rast,"output/all_pesticide_exposure.tif",layer = "all_pesticide_exposure")
+write_stars(pesticide_CMR_all_check_rast,"output/mean_ift.tif",layer = "mean_ift")
+write_stars(pesticide_CMR_all_check_rast,"output/mean_ift_hbc.tif",layer = "mean_ift_hbc")
+
+img1 <- terra::rast("output/all_pesticide_exposure.tif")
+img2 <- terra::rast("output/mean_ift_hbc.tif")
+
+ssim_raster(img1,img2,w=1)
+result_raster <- ssim_raster(img1,img2,w=1,global = FALSE)
+levelplot(result_raster)
+ggplot() + tidyterra::geom_spatraster(data=result_raster$SSIM)+ scale_fill_gradient2(low = sf.colors(20)[1],mid=sf.colors(20)[10],high=sf.colors(20)[20], na.value = NA, midpoint = 0) +  theme_void()
+ggplot() + tidyterra::geom_spatraster(data=result_raster$SIM)+ scale_fill_gradient2(low = sf.colors(20)[1],mid=sf.colors(20)[10],high=sf.colors(20)[20], na.value = NA, midpoint = 0) +  theme_void()
+ggplot() + tidyterra::geom_spatraster(data=result_raster$SIV)+ scale_fill_gradient2(low = sf.colors(20)[1],mid=sf.colors(20)[10],high=sf.colors(20)[20], na.value = NA, midpoint = 0) +  theme_void()
+ggplot() + tidyterra::geom_spatraster(data=result_raster$SIP)+ scale_fill_gradient2(low = sf.colors(20)[1],mid=sf.colors(20)[10],high=sf.colors(20)[20], na.value = NA, midpoint = 0) +  theme_void()
+
+ggsave("output/figure_ssim.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
+
+diff_img <- img1-img2
+ggplot() + tidyterra::geom_spatraster(data=diff_img)+ scale_fill_gradient2(low = sf.colors(20)[1],mid=sf.colors(20)[10],high=sf.colors(20)[20], na.value = NA, midpoint = 0) +  theme_void()
+
+
+img1$mean_ift_hbc<-img2$mean_ift_hbc
+
+cor_all <- focalPairs(img1,w=3, fun="pearson", na.rm=TRUE)
+ggplot() + tidyterra::geom_spatraster(data=cor_all)+ scale_fill_gradientn(colors = sf.colors(20)) +  theme_void()
+
+
+for(i in 2013:2022){
+  print(i)
+  
+  pesticide_soil_rast_temp <- pesticide_soil_CMR_average_year[which(pesticide_soil_CMR_average_year$Annee==i),c("mean_itt")]
+  pesticide_soil_rast_temp$mean_itt <- scales::rescale(pesticide_soil_rast_temp$mean_itt)
+  pesticide_soil_rast_temp <- st_rasterize(pesticide_soil_rast_temp, st_crop(st_as_stars(st_bbox(fr),dx=20000),fr))
+  file_name <- paste0("output/pesticide_soil_rast_",i,".tif")
+  write_stars(pesticide_soil_rast_temp,file_name,layer = "mean_itt")
+  
+  pesticide_air_rast_temp <- pesticide_air_CMR_average_year[which(pesticide_air_CMR_average_year$year==i),c("mean_concentration")]
+  pesticide_air_rast_temp$mean_concentration <- scales::rescale(pesticide_air_rast_temp$mean_concentration)
+  pesticide_air_rast_temp <- st_rasterize(pesticide_air_rast_temp, st_crop(st_as_stars(st_bbox(fr),dx=20000),fr))
+  file_name <- paste0("output/pesticide_air_rast_",i,".tif")
+  write_stars(pesticide_air_rast_temp,file_name,layer = "mean_concentration")
+  
+  pesticide_water_rast_temp <- pesticide_water_CMR_average_year[which(pesticide_water_CMR_average_year$year==i),c("mean_concentration")]
+  pesticide_water_rast_temp$mean_concentration <- scales::rescale(pesticide_water_rast_temp$mean_concentration)
+  pesticide_water_rast_temp <- st_rasterize(pesticide_water_rast_temp, st_crop(st_as_stars(st_bbox(fr),dx=20000),fr))
+  file_name <- paste0("output/pesticide_water_rast_",i,".tif")
+  write_stars(pesticide_water_rast_temp,file_name,layer = "mean_concentration")
+  
+}
+
+img1 <- rast("output/pesticide_soil_rast_2013.tif")
+img2 <- rast("output/pesticide_air_rast_2013.tif")
+img3 <- rast("output/pesticide_water_rast_2013.tif")
+
+img1$pesticide_air_rast_2013<-img2$pesticide_air_rast_2013
+img1$pesticide_water_rast_2013<-img3$pesticide_water_rast_2013
+
+cor_2013 <- focalPairs(img1,w=3, fun="pearson", na.rm=TRUE)
+ggplot() + tidyterra::geom_spatraster(data=cor_2013)
+
+ssim_raster(img1,img2)
+result_raster <- ssim_raster(img1,img2,global = FALSE)
+levelplot(result_raster)
