@@ -1,4 +1,4 @@
-# Active substance use and concetration in air and surface water in metropolitan France between 2013 and 2022
+# Pesticides in France: ten years of combined exposure to active substances in land, air and surface water
 
 ## Load functions and packages
 
