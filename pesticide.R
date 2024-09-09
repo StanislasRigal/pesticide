@@ -506,7 +506,7 @@ ggplot(pesticide_ift_sau_plot)+
 
 # par an
 
-pesticide_itt_year <- data.frame(pesticide_pre_itt %>% group_by(code_postal_acheteur,annee,substance) %>% summarise(sum_qsa_dhsa = sum(qsa_dhsa, na.rm=T), sum_qsa = sum(quantite_substance, na.rm=T)))
+pesticide_itt_year <- data.frame(pesticide_pre_itt %>% group_by(code_postal_acheteur,annee,substance) %>% summarise(sum_qsa_dhsa = sum(qsa_dhsa, na.rm=T), sum_qsa = sum(quantite_substance, na.rm=T), dose_homo_sa2 = max(dose_homo_sa)))
 pesticide_itt_year_sau <- merge(code_postal_insee_SAU,pesticide_itt_year,by.x="postal_code",by.y="code_postal_acheteur")
 pesticide_itt_year_sau$itt <- pesticide_itt_year_sau$sum_qsa_dhsa/pesticide_itt_year_sau$sau_tot
 
