@@ -887,7 +887,67 @@ names(Yearly_exposure_to_active_substance_in_use_air_and_water)[c(3,4,6,7)] <- c
 saveRDS(Yearly_exposure_to_active_substance_in_use_air_and_water,"output/Yearly_exposure_to_active_substance_in_use_air_and_water.rds")
 st_write(Yearly_exposure_to_active_substance_in_use_air_and_water,dsn="output/Yearly_exposure_to_active_substance_in_use_air_and_water.gpkg")
 
+Trend_df <- Yearly_exposure_to_active_substance_in_use_air_and_water
+st_geometry(Trend_df) <- NULL
 
+Trend_result <- ddply(Trend_df, .(id), 
+                      .fun = function(x){
+                        if(length(which(!is.na(x$all_pesticide_exposure))) >= 8){
+                          linear_trend_model <- lm(all_pesticide_exposure ~ year, data = x)
+                          linear_trend <- summary(linear_trend_model)$coef[2,]
+                        }else{
+                          linear_trend <- rep(NA,4)
+                        }
+                        return(linear_trend)
+                        }, .progress = "text")
+
+Trend_result$Estimate_signif <- Trend_result$Estimate
+Trend_result$Estimate_signif[which(Trend_result$`Pr(>|t|)` >= 0.05)] <- NA
+
+saveRDS(Trend_result,"output/Trend_result.rds")
+
+pesticide_CMR_trend <- readRDS("output/pesticide_CMR_2022.rds")
+pesticide_CMR_trend$year <- NULL
+pesticide_CMR_trend$mean_concentration <- NULL
+pesticide_CMR_trend$mean_concentration_scale <- NULL
+pesticide_CMR_trend$mean_itt <- NULL
+pesticide_CMR_trend$mean_itt_scale <- NULL
+pesticide_CMR_trend$mean_concentration_water <- NULL
+pesticide_CMR_trend$mean_concentration_scale_water <- NULL
+pesticide_CMR_trend$all_pesticide_exposure <- NULL
+
+pesticide_CMR_trend$Estimate <- Trend_result$Estimate
+pesticide_CMR_trend$`Std. Error` <- Trend_result$`Std. Error`
+pesticide_CMR_trend$`t value` <- Trend_result$`t value`
+pesticide_CMR_trend$`Pr(>|t|)` <- Trend_result$`Pr(>|t|)`
+pesticide_CMR_trend$Estimate_signif <- Trend_result$Estimate_signif
+
+saveRDS(pesticide_CMR_trend,"output/pesticide_CMR_trend.rds")
+
+ggplot(pesticide_CMR_trend)+
+  geom_sf(aes(fill=Estimate), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_void()
+
+ggsave("output/figure_trend.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
+
+ggplot(pesticide_CMR_trend)+
+  geom_sf(aes(fill=Estimate_signif), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_void()
+
+ggplot(pesticide_CMR_trend)+
+  geom_sf(aes(fill=`Std. Error`), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_void()
+
+ggsave("output/figure_trend_se.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
 
 ## adonis data
 
