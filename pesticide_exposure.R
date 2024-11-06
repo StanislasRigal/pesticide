@@ -1,6 +1,9 @@
 # pesticide use
 itt_pesticide_year <- readRDS("output/itt_pesticide_year.rds")
 qsa_pesticide_year <- readRDS("output/qsa_pesticide_year.rds")
+itt_pesticide_year_com <- readRDS("output/itt_pesticide_year_com.rds")
+qsa_pesticide_year_com <- readRDS("output/qsa_pesticide_year_com.rds")
+qsa_dhsa_pesticide_year_com <- readRDS("output/qsa_dhsa_pesticide_year_com.rds")
 # pesticide air
 df_sa_year_long <- readRDS("output/df_sa_year_long.rds")
 # pesticide water
@@ -167,6 +170,155 @@ qsa_pesticide_year$`Iron sulphate` <- apply(qsa_pesticide_year[,c("Iron sulphate
 qsa_pesticide_year$`Sulfate de fer sulfate ferreux heptahydrate ` <-  NULL
 
 
+names(itt_pesticide_year_com) <- gsub('\\.', ' ', names(itt_pesticide_year_com))
+names(itt_pesticide_year_com)[-c(349:350)] <- foo(names(itt_pesticide_year_com)[-c(349:350)])
+names(itt_pesticide_year_com)[which(!(names(itt_pesticide_year_com) %in% substance_active$Nom.substance.active))]
+
+names(itt_pesticide_year_com)[which(!(names(itt_pesticide_year_com) %in% substance_active$Nom.substance.active))][-c(1,2,206:207)] <- c("(E,Z)-7,9-Dodecadien-1-yl Acetate","Z-13-hexadecen-11-yn-1-yl acetate","Straight Chain Lepidopteran Pheromones","1,3-Dichloropropene","2,4-D","2,4-DB",
+                                                                                                                            "MCPA","MCPB","6-Benzyladenine","8-Hydroxyquinoline incl. oxyquinoleine","Abamectin","Acetamiprid",
+                                                                                                                            "Straight Chain Lepidopteran Pheromones","Acetate de z 8 dodecenyle","Acibenzolar-S-methyl","Acetic acid","1-Naphtylacetic acid","Gibberellic acid",
+                                                                                                                            "Acide octanoique","Fatty acids","Potassium phosphonates","Acrinathrin","Naphtylacetic acid hydrazide","Alphamethrine",
+                                                                                                                            "Ametoctradin","Aminotriazole","Asulam","Azadirachtin","Azoxystrobin","Bacillus pumilus QST 2808",
+                                                                                                                            "Bacillus thuringiensis serotype 3a 3b","Bacillus thuringiensis sérotype h 7","Bacillus thuringiensis subsp. aizawai strain ABTS-1857","Beflubutamid","Benfluralin","Benfuracarb",
+                                                                                                                            "Bensulfuron","Beta-Cyfluthrin","Bicarbonate de potassium", "Bifenthrin","Bromoxynil","Buprofezin",
+                                                                                                                            "Piperonyl butoxide","Captan","Carfentrazone-ethyl","Chlorates","Chloridazon","Chlormequat",
+                                                                                                                            "Chlorpropham","Chlorpyrifos","Chlorpyrifos-methyl","Chlorthal-dimethyl","Choline chloride","Cinidon-ethyl",
+                                                                                                                            "Sintofen","Clethodim","Clopyralid","Clothianidin","COS-OGA","Copper compounds",
+                                                                                                                            "Cuivre de l oxychlorure de cuivre","Cuivre de l oxyde cuivreux","Cuivre du sulfate de cuivre","Cuivre du sulfate tetracuivrique et tricalcique","Cuivre du sulfate tribasique","Cuivre du tallate de cuivre",
+                                                                                                                            "Cyanamide (H & Ca cyanamide)","Cyazofamid","Cycloxydim","Cydia pomonella Granulovirus (CpGV)","Cyfluthrin","Cyhalofop-butyl",
+                                                                                                                            "Cypermethrin","Cyprodinil","1-Decanol","Deltamethrin","Didecyldimethylammonium chloride","Dichlorprop-P",
+                                                                                                                            "Diclofop","Diflufenican","Dimethachlor","Dimethenamid","Dimethenamid-P","Dimethomorph",
+                                                                                                                            "Diquat (dibromide)","Emamectin","Esters methyliques d'acides gras","Esters methyliques d acides gras c16 c18 et c18 insatures","Garlic extract","Fenugrec extract",
+                                                                                                                            "Blood meal","Fenbutatin oxide","Fenoxaprop-P","Fenoxycarb","Fenpicoxamid","Fenpropidin",
+                                                                                                                            "Fenpropimorph","Iron sulphate","Flonicamid","Florasulam","Florpyrauxifen-benzyl","Fluazifop-P",
+                                                                                                                            "Flumioxazin","Flupyrsulfuron-methyl","Fluroxypyr","Folpet","Formetanate","Fosetyl",
+                                                                                                                            "Gamma-cyhalothrin","Gibberellins","Glufosinate","Halosulfuron methyl","Heptamethyltrisiloxane modifie polyalkyleneoxide","Bone Oil",
+                                                                                                                            "Paraffin oils","Huile de vaseline","Orange oil","Huile minerale paraffinique","Maleic hydrazide","Imidacloprid",
+                                                                                                                            "Indoxacarb","Ioxynil","Isofetamid","Isoxadifen-ethyl","Kaolin","Kresoxim-methyl",
+                                                                                                                            "Lambda-Cyhalothrin","Laminarin","Lenacil","Mancozeb","Mandestrobin","Mandipropamid",
+                                                                                                                            "Maneb","Mecoprop-P","Mefenpyr","Metalaxyl-M","Metam","Metamitron",
+                                                                                                                            "Metazachlor","Methiocarb","Metiram","Metirame zinc","Metribuzin","Metsulfuron-methyl",#
+                                                                                                                            "Milbemectin","Oxathiapiprolin","Oxyfluorfen","Pendimethalin","Penoxsulam","Pethoxamid",
+                                                                                                                            "Phenmedipham","Ferric phosphate","Disodium phosphonate","Potassium phosphonates","Aluminium phosphide","Zinc phosphide",
+                                                                                                                            "Picloram","Picoxystrobin","Pepper","Prochloraz","Prohexadione","Propachlor",
+                                                                                                                            "Propamocarb","Propamocarbe hcl","Propoxycarbazone","Prosulfocarb","Pyraclostrobin","Pyraflufen-ethyl",
+                                                                                                                            "Pyrethrins","Pyridaben","Pyrimicarb","Pyriproxyfen","Quinoxyfen","Quizalofop-P-ethyl",
+                                                                                                                            "S-Metolachlor","Fatty acids: potassium salt - tall oil fatty acid","Sels de potassium d acides gras c8 c18 ","Sulphur","Soufre pour pulverisation micronise ","Soufre sublime",
+                                                                                                                            "Soufre triture","Soufre triture ventile","Sulfate de fer sulfate ferreux heptahydrate ","Tau-Fluvalinate","Tefluthrin","Thiacloprid",
+                                                                                                                            "Thiencarbazone","Thifensulfuron-methyl","Ammonium thiocyanate","Thiodicarb","Thiophanate-methyl","Thiram",
+                                                                                                                            "Tri-allate","Tribenuron","Trichoderma asperellum TV1","Trifloxystrobin","Trifluralin","Triflusulfuron",
+                                                                                                                            "Trinexapac","Agrotis segetum granulosis virus","Zucchini yellow mosaic virus","Zeta-Cypermethrin","Ziram")
+
+itt_pesticide_year_com$`Copper compounds` <- apply(itt_pesticide_year_com[,c("Copper compounds","Cuivre de l oxychlorure de cuivre","Cuivre de l oxyde cuivreux","Cuivre du sulfate de cuivre","Cuivre du sulfate tribasique","Cuivre du tallate de cuivre","Cuivre du sulfate tetracuivrique et tricalcique")],1,function(x){x<-unlist(x[1:7]); return(sum(x, na.rm=TRUE))})
+itt_pesticide_year_com$`Cuivre de l oxychlorure de cuivre` <- itt_pesticide_year_com$`Cuivre de l oxyde cuivreux` <- itt_pesticide_year_com$`Cuivre du sulfate de cuivre` <- 
+  itt_pesticide_year_com$`Cuivre du sulfate tribasique` <- itt_pesticide_year_com$`Cuivre du tallate de cuivre` <- itt_pesticide_year_com$`Cuivre du sulfate tetracuivrique et tricalcique` <- NULL
+
+itt_pesticide_year_com$Sulphur <- apply(itt_pesticide_year_com[,c("Sulphur","Soufre pour pulverisation micronise ","Soufre sublime","Soufre triture","Soufre triture ventile")],1,function(x){x<-unlist(x[1:5]); return(sum(x, na.rm=TRUE))})
+itt_pesticide_year_com$`Soufre pour pulverisation micronise ` <- itt_pesticide_year_com$`Soufre sublime` <- itt_pesticide_year_com$`Soufre triture` <- itt_pesticide_year_com$`Soufre triture ventile` <- NULL
+
+itt_pesticide_year_com$`Iron sulphate` <- apply(itt_pesticide_year_com[,c("Iron sulphate","Sulfate de fer sulfate ferreux heptahydrate ")],1,function(x){x<-unlist(x[1:2]); return(sum(x, na.rm=TRUE))})
+itt_pesticide_year_com$`Sulfate de fer sulfate ferreux heptahydrate ` <-  NULL
+
+
+names(qsa_pesticide_year_com) <- gsub('\\.', ' ', names(qsa_pesticide_year_com))
+names(qsa_pesticide_year_com)[-c(349:350)] <- foo(names(qsa_pesticide_year_com)[-c(349:350)])
+names(qsa_pesticide_year_com)[which(!(names(qsa_pesticide_year_com) %in% substance_active$Nom.substance.active))]
+
+names(qsa_pesticide_year_com)[which(!(names(qsa_pesticide_year_com) %in% substance_active$Nom.substance.active))][-c(1,2,206:207)] <- c("(E,Z)-7,9-Dodecadien-1-yl Acetate","Z-13-hexadecen-11-yn-1-yl acetate","Straight Chain Lepidopteran Pheromones","1,3-Dichloropropene","2,4-D","2,4-DB",
+                                                                                                                            "MCPA","MCPB","6-Benzyladenine","8-Hydroxyquinoline incl. oxyquinoleine","Abamectin","Acetamiprid",
+                                                                                                                            "Straight Chain Lepidopteran Pheromones","Acetate de z 8 dodecenyle","Acibenzolar-S-methyl","Acetic acid","1-Naphtylacetic acid","Gibberellic acid",
+                                                                                                                            "Acide octanoique","Fatty acids","Potassium phosphonates","Acrinathrin","Naphtylacetic acid hydrazide","Alphamethrine",
+                                                                                                                            "Ametoctradin","Aminotriazole","Asulam","Azadirachtin","Azoxystrobin","Bacillus pumilus QST 2808",
+                                                                                                                            "Bacillus thuringiensis serotype 3a 3b","Bacillus thuringiensis sérotype h 7","Bacillus thuringiensis subsp. aizawai strain ABTS-1857","Beflubutamid","Benfluralin","Benfuracarb",
+                                                                                                                            "Bensulfuron","Beta-Cyfluthrin","Bicarbonate de potassium", "Bifenthrin","Bromoxynil","Buprofezin",
+                                                                                                                            "Piperonyl butoxide","Captan","Carfentrazone-ethyl","Chlorates","Chloridazon","Chlormequat",
+                                                                                                                            "Chlorpropham","Chlorpyrifos","Chlorpyrifos-methyl","Chlorthal-dimethyl","Choline chloride","Cinidon-ethyl",
+                                                                                                                            "Sintofen","Clethodim","Clopyralid","Clothianidin","COS-OGA","Copper compounds",
+                                                                                                                            "Cuivre de l oxychlorure de cuivre","Cuivre de l oxyde cuivreux","Cuivre du sulfate de cuivre","Cuivre du sulfate tetracuivrique et tricalcique","Cuivre du sulfate tribasique","Cuivre du tallate de cuivre",
+                                                                                                                            "Cyanamide (H & Ca cyanamide)","Cyazofamid","Cycloxydim","Cydia pomonella Granulovirus (CpGV)","Cyfluthrin","Cyhalofop-butyl",
+                                                                                                                            "Cypermethrin","Cyprodinil","1-Decanol","Deltamethrin","Didecyldimethylammonium chloride","Dichlorprop-P",
+                                                                                                                            "Diclofop","Diflufenican","Dimethachlor","Dimethenamid","Dimethenamid-P","Dimethomorph",
+                                                                                                                            "Diquat (dibromide)","Emamectin","Esters methyliques d'acides gras","Esters methyliques d acides gras c16 c18 et c18 insatures","Garlic extract","Fenugrec extract",
+                                                                                                                            "Blood meal","Fenbutatin oxide","Fenoxaprop-P","Fenoxycarb","Fenpicoxamid","Fenpropidin",
+                                                                                                                            "Fenpropimorph","Iron sulphate","Flonicamid","Florasulam","Florpyrauxifen-benzyl","Fluazifop-P",
+                                                                                                                            "Flumioxazin","Flupyrsulfuron-methyl","Fluroxypyr","Folpet","Formetanate","Fosetyl",
+                                                                                                                            "Gamma-cyhalothrin","Gibberellins","Glufosinate","Halosulfuron methyl","Heptamethyltrisiloxane modifie polyalkyleneoxide","Bone Oil",
+                                                                                                                            "Paraffin oils","Huile de vaseline","Orange oil","Huile minerale paraffinique","Maleic hydrazide","Imidacloprid",
+                                                                                                                            "Indoxacarb","Ioxynil","Isofetamid","Isoxadifen-ethyl","Kaolin","Kresoxim-methyl",
+                                                                                                                            "Lambda-Cyhalothrin","Laminarin","Lenacil","Mancozeb","Mandestrobin","Mandipropamid",
+                                                                                                                            "Maneb","Mecoprop-P","Mefenpyr","Metalaxyl-M","Metam","Metamitron",
+                                                                                                                            "Metazachlor","Methiocarb","Metiram","Metirame zinc","Metribuzin","Metsulfuron-methyl",#
+                                                                                                                            "Milbemectin","Oxathiapiprolin","Oxyfluorfen","Pendimethalin","Penoxsulam","Pethoxamid",
+                                                                                                                            "Phenmedipham","Ferric phosphate","Disodium phosphonate","Potassium phosphonates","Aluminium phosphide","Zinc phosphide",
+                                                                                                                            "Picloram","Picoxystrobin","Pepper","Prochloraz","Prohexadione","Propachlor",
+                                                                                                                            "Propamocarb","Propamocarbe hcl","Propoxycarbazone","Prosulfocarb","Pyraclostrobin","Pyraflufen-ethyl",
+                                                                                                                            "Pyrethrins","Pyridaben","Pyrimicarb","Pyriproxyfen","Quinoxyfen","Quizalofop-P-ethyl",
+                                                                                                                            "S-Metolachlor","Fatty acids: potassium salt - tall oil fatty acid","Sels de potassium d acides gras c8 c18 ","Sulphur","Soufre pour pulverisation micronise ","Soufre sublime",
+                                                                                                                            "Soufre triture","Soufre triture ventile","Sulfate de fer sulfate ferreux heptahydrate ","Tau-Fluvalinate","Tefluthrin","Thiacloprid",
+                                                                                                                            "Thiencarbazone","Thifensulfuron-methyl","Ammonium thiocyanate","Thiodicarb","Thiophanate-methyl","Thiram",
+                                                                                                                            "Tri-allate","Tribenuron","Trichoderma asperellum TV1","Trifloxystrobin","Trifluralin","Triflusulfuron",
+                                                                                                                            "Trinexapac","Agrotis segetum granulosis virus","Zucchini yellow mosaic virus","Zeta-Cypermethrin","Ziram")
+
+qsa_pesticide_year_com$`Copper compounds` <- apply(qsa_pesticide_year_com[,c("Copper compounds","Cuivre de l oxychlorure de cuivre","Cuivre de l oxyde cuivreux","Cuivre du sulfate de cuivre","Cuivre du sulfate tribasique","Cuivre du tallate de cuivre","Cuivre du sulfate tetracuivrique et tricalcique")],1,function(x){x<-unlist(x[1:7]); return(sum(x, na.rm=TRUE))})
+qsa_pesticide_year_com$`Cuivre de l oxychlorure de cuivre` <- qsa_pesticide_year_com$`Cuivre de l oxyde cuivreux` <- qsa_pesticide_year_com$`Cuivre du sulfate de cuivre` <- 
+  qsa_pesticide_year_com$`Cuivre du sulfate tribasique` <- qsa_pesticide_year_com$`Cuivre du tallate de cuivre` <- qsa_pesticide_year_com$`Cuivre du sulfate tetracuivrique et tricalcique` <- NULL
+
+qsa_pesticide_year_com$Sulphur <- apply(qsa_pesticide_year_com[,c("Sulphur","Soufre pour pulverisation micronise ","Soufre sublime","Soufre triture","Soufre triture ventile")],1,function(x){x<-unlist(x[1:5]); return(sum(x, na.rm=TRUE))})
+qsa_pesticide_year_com$`Soufre pour pulverisation micronise ` <- qsa_pesticide_year_com$`Soufre sublime` <- qsa_pesticide_year_com$`Soufre triture` <- qsa_pesticide_year_com$`Soufre triture ventile` <- NULL
+
+qsa_pesticide_year_com$`Iron sulphate` <- apply(qsa_pesticide_year_com[,c("Iron sulphate","Sulfate de fer sulfate ferreux heptahydrate ")],1,function(x){x<-unlist(x[1:2]); return(sum(x, na.rm=TRUE))})
+qsa_pesticide_year_com$`Sulfate de fer sulfate ferreux heptahydrate ` <-  NULL
+
+
+names(qsa_dhsa_pesticide_year_com) <- gsub('\\.', ' ', names(qsa_dhsa_pesticide_year_com))
+names(qsa_dhsa_pesticide_year_com)[-c(351:352)] <- foo(names(qsa_dhsa_pesticide_year_com)[-c(351:352)])
+names(qsa_dhsa_pesticide_year_com)[which(!(names(qsa_dhsa_pesticide_year_com) %in% substance_active$Nom.substance.active))]
+
+names(qsa_dhsa_pesticide_year_com)[which(!(names(qsa_dhsa_pesticide_year_com) %in% substance_active$Nom.substance.active))][-c(1:4,208:209)] <- c("(E,Z)-7,9-Dodecadien-1-yl Acetate","Z-13-hexadecen-11-yn-1-yl acetate","Straight Chain Lepidopteran Pheromones","1,3-Dichloropropene","2,4-D","2,4-DB",
+                                                                                                                                        "MCPA","MCPB","6-Benzyladenine","8-Hydroxyquinoline incl. oxyquinoleine","Abamectin","Acetamiprid",
+                                                                                                                                        "Straight Chain Lepidopteran Pheromones","Acetate de z 8 dodecenyle","Acibenzolar-S-methyl","Acetic acid","1-Naphtylacetic acid","Gibberellic acid",
+                                                                                                                                        "Acide octanoique","Fatty acids","Potassium phosphonates","Acrinathrin","Naphtylacetic acid hydrazide","Alphamethrine",
+                                                                                                                                        "Ametoctradin","Aminotriazole","Asulam","Azadirachtin","Azoxystrobin","Bacillus pumilus QST 2808",
+                                                                                                                                        "Bacillus thuringiensis serotype 3a 3b","Bacillus thuringiensis sérotype h 7","Bacillus thuringiensis subsp. aizawai strain ABTS-1857","Beflubutamid","Benfluralin","Benfuracarb",
+                                                                                                                                        "Bensulfuron","Beta-Cyfluthrin","Bicarbonate de potassium", "Bifenthrin","Bromoxynil","Buprofezin",
+                                                                                                                                        "Piperonyl butoxide","Captan","Carfentrazone-ethyl","Chlorates","Chloridazon","Chlormequat",
+                                                                                                                                        "Chlorpropham","Chlorpyrifos","Chlorpyrifos-methyl","Chlorthal-dimethyl","Choline chloride","Cinidon-ethyl",
+                                                                                                                                        "Sintofen","Clethodim","Clopyralid","Clothianidin","COS-OGA","Copper compounds",
+                                                                                                                                        "Cuivre de l oxychlorure de cuivre","Cuivre de l oxyde cuivreux","Cuivre du sulfate de cuivre","Cuivre du sulfate tetracuivrique et tricalcique","Cuivre du sulfate tribasique","Cuivre du tallate de cuivre",
+                                                                                                                                        "Cyanamide (H & Ca cyanamide)","Cyazofamid","Cycloxydim","Cydia pomonella Granulovirus (CpGV)","Cyfluthrin","Cyhalofop-butyl",
+                                                                                                                                        "Cypermethrin","Cyprodinil","1-Decanol","Deltamethrin","Didecyldimethylammonium chloride","Dichlorprop-P",
+                                                                                                                                        "Diclofop","Diflufenican","Dimethachlor","Dimethenamid","Dimethenamid-P","Dimethomorph",
+                                                                                                                                        "Diquat (dibromide)","Emamectin","Esters methyliques d'acides gras","Esters methyliques d acides gras c16 c18 et c18 insatures","Garlic extract","Fenugrec extract",
+                                                                                                                                        "Blood meal","Fenbutatin oxide","Fenoxaprop-P","Fenoxycarb","Fenpicoxamid","Fenpropidin",
+                                                                                                                                        "Fenpropimorph","Iron sulphate","Flonicamid","Florasulam","Florpyrauxifen-benzyl","Fluazifop-P",
+                                                                                                                                        "Flumioxazin","Flupyrsulfuron-methyl","Fluroxypyr","Folpet","Formetanate","Fosetyl",
+                                                                                                                                        "Gamma-cyhalothrin","Gibberellins","Glufosinate","Halosulfuron methyl","Heptamethyltrisiloxane modifie polyalkyleneoxide","Bone Oil",
+                                                                                                                                        "Paraffin oils","Huile de vaseline","Orange oil","Huile minerale paraffinique","Maleic hydrazide","Imidacloprid",
+                                                                                                                                        "Indoxacarb","Ioxynil","Isofetamid","Isoxadifen-ethyl","Kaolin","Kresoxim-methyl",
+                                                                                                                                        "Lambda-Cyhalothrin","Laminarin","Lenacil","Mancozeb","Mandestrobin","Mandipropamid",
+                                                                                                                                        "Maneb","Mecoprop-P","Mefenpyr","Metalaxyl-M","Metam","Metamitron",
+                                                                                                                                        "Metazachlor","Methiocarb","Metiram","Metirame zinc","Metribuzin","Metsulfuron-methyl",#
+                                                                                                                                        "Milbemectin","Oxathiapiprolin","Oxyfluorfen","Pendimethalin","Penoxsulam","Pethoxamid",
+                                                                                                                                        "Phenmedipham","Ferric phosphate","Disodium phosphonate","Potassium phosphonates","Aluminium phosphide","Zinc phosphide",
+                                                                                                                                        "Picloram","Picoxystrobin","Pepper","Prochloraz","Prohexadione","Propachlor",
+                                                                                                                                        "Propamocarb","Propamocarbe hcl","Propoxycarbazone","Prosulfocarb","Pyraclostrobin","Pyraflufen-ethyl",
+                                                                                                                                        "Pyrethrins","Pyridaben","Pyrimicarb","Pyriproxyfen","Quinoxyfen","Quizalofop-P-ethyl",
+                                                                                                                                        "S-Metolachlor","Fatty acids: potassium salt - tall oil fatty acid","Sels de potassium d acides gras c8 c18 ","Sulphur","Soufre pour pulverisation micronise ","Soufre sublime",
+                                                                                                                                        "Soufre triture","Soufre triture ventile","Sulfate de fer sulfate ferreux heptahydrate ","Tau-Fluvalinate","Tefluthrin","Thiacloprid",
+                                                                                                                                        "Thiencarbazone","Thifensulfuron-methyl","Ammonium thiocyanate","Thiodicarb","Thiophanate-methyl","Thiram",
+                                                                                                                                        "Tri-allate","Tribenuron","Trichoderma asperellum TV1","Trifloxystrobin","Trifluralin","Triflusulfuron",
+                                                                                                                                        "Trinexapac","Agrotis segetum granulosis virus","Zucchini yellow mosaic virus","Zeta-Cypermethrin","Ziram")
+
+qsa_dhsa_pesticide_year_com$`Copper compounds` <- apply(qsa_dhsa_pesticide_year_com[,c("Copper compounds","Cuivre de l oxychlorure de cuivre","Cuivre de l oxyde cuivreux","Cuivre du sulfate de cuivre","Cuivre du sulfate tribasique","Cuivre du tallate de cuivre","Cuivre du sulfate tetracuivrique et tricalcique")],1,function(x){x<-unlist(x[1:7]); return(sum(x, na.rm=TRUE))})
+qsa_dhsa_pesticide_year_com$`Cuivre de l oxychlorure de cuivre` <- qsa_dhsa_pesticide_year_com$`Cuivre de l oxyde cuivreux` <- qsa_dhsa_pesticide_year_com$`Cuivre du sulfate de cuivre` <- 
+  qsa_dhsa_pesticide_year_com$`Cuivre du sulfate tribasique` <- qsa_dhsa_pesticide_year_com$`Cuivre du tallate de cuivre` <- qsa_dhsa_pesticide_year_com$`Cuivre du sulfate tetracuivrique et tricalcique` <- NULL
+
+qsa_dhsa_pesticide_year_com$Sulphur <- apply(qsa_dhsa_pesticide_year_com[,c("Sulphur","Soufre pour pulverisation micronise ","Soufre sublime","Soufre triture","Soufre triture ventile")],1,function(x){x<-unlist(x[1:5]); return(sum(x, na.rm=TRUE))})
+qsa_dhsa_pesticide_year_com$`Soufre pour pulverisation micronise ` <- qsa_dhsa_pesticide_year_com$`Soufre sublime` <- qsa_dhsa_pesticide_year_com$`Soufre triture` <- qsa_dhsa_pesticide_year_com$`Soufre triture ventile` <- NULL
+
+qsa_dhsa_pesticide_year_com$`Iron sulphate` <- apply(qsa_dhsa_pesticide_year_com[,c("Iron sulphate","Sulfate de fer sulfate ferreux heptahydrate ")],1,function(x){x<-unlist(x[1:2]); return(sum(x, na.rm=TRUE))})
+qsa_dhsa_pesticide_year_com$`Sulfate de fer sulfate ferreux heptahydrate ` <-  NULL
+
 # focus on substances mandatory to report
 
 substance_active_unique <- read.csv2("raw_data/decisionamm-intrant-format-csv-20240710-utf8/substance_active_utf8_uniqueCAS.csv",header=T)
@@ -199,16 +351,19 @@ write.csv2(mandatory_all_CAS, "output/Active_substance_to_report.csv", row.names
 
 pesticide_soil <- itt_pesticide_year[,c(1,2,which(names(itt_pesticide_year) %in% mandatory_all))]
 pesticide_soil_qsa <- qsa_pesticide_year[,c(1,2,which(names(qsa_pesticide_year) %in% mandatory_all))]
+pesticide_soil_com <- itt_pesticide_year_com[,c(1,2,which(names(itt_pesticide_year_com) %in% mandatory_all))]
 pesticide_air <- df_sa_year_long[,c(1,2,which(names(df_sa_year_long) %in% mandatory_all))]
 pesticide_water <- bassin_versant_all_year[,c(1,2,which(names(bassin_versant_all_year) %in% mandatory_all))]
 
 names(pesticide_soil)[1:2] <- c("geo_id","year")
 names(pesticide_soil_qsa)[1:2] <- c("geo_id","year")
+names(pesticide_soil_com)[1:2] <- c("geo_id","year")
 names(pesticide_air)[1:2] <- c("geo_id","year")
 names(pesticide_water)[1:2] <- c("geo_id","year")
 
 Active_substances_in_use <- pesticide_soil
 Active_substances_in_use_raw <- pesticide_soil_qsa
+Active_substances_in_use_com <- pesticide_soil_com
 Active_substances_in_air <- pesticide_air
 Active_substances_in_water <- pesticide_water
 
@@ -249,10 +404,16 @@ sa_TTCMR[which(!(sa_TTCMR %in% substance_active$Nom.substance.active))] <- c("1,
                                                                              "Triflusulfuron","Zeta-Cypermethrin","Ziram")
 
 pesticide_soil_CMR <- itt_pesticide_year[,c(1,2,which(names(itt_pesticide_year) %in% mandatory_all & names(itt_pesticide_year) %in% sa_TTCMR))]
+pesticide_soil_com_CMR <- itt_pesticide_year_com[,c(1,2,which(names(itt_pesticide_year_com) %in% mandatory_all & names(itt_pesticide_year_com) %in% sa_TTCMR))]
+pesticide_soil_qsa_CMR <- qsa_pesticide_year[,c(1,2,which(names(qsa_pesticide_year) %in% mandatory_all & names(qsa_pesticide_year) %in% sa_TTCMR))]
+pesticide_soil_qsa_com_CMR <- qsa_pesticide_year_com[,c(1,2,which(names(qsa_pesticide_year_com) %in% mandatory_all & names(qsa_pesticide_year_com) %in% sa_TTCMR))]
+pesticide_soil_qsa_dhsa_com_CMR <- qsa_dhsa_pesticide_year_com[,c(1:4,which(names(qsa_dhsa_pesticide_year_com) %in% mandatory_all & names(qsa_dhsa_pesticide_year_com) %in% sa_TTCMR))]
 pesticide_air_CMR <- df_sa_year_long[,c(1,2,which(names(df_sa_year_long) %in% mandatory_all & names(df_sa_year_long) %in% sa_TTCMR))]
 pesticide_water_CMR <- bassin_versant_all_year[,c(1,2,which(names(bassin_versant_all_year) %in% mandatory_all & names(bassin_versant_all_year) %in% sa_TTCMR))]
 
 saveRDS(pesticide_soil_CMR,"output/pesticide_soil_CMR.rds")
+saveRDS(pesticide_soil_com_CMR,"output/pesticide_soil_com_CMR.rds")
+saveRDS(pesticide_soil_qsa_dhsa_com_CMR,"output/pesticide_soil_qsa_dhsa_com_CMR.rds")
 saveRDS(pesticide_air_CMR,"output/pesticide_air_CMR.rds")
 saveRDS(pesticide_water_CMR,"output/pesticide_water_CMR.rds")
 
@@ -261,6 +422,7 @@ average_soil_CMR <- pesticide_soil_CMR
 st_geometry(average_soil_CMR) <- NULL
 average_soil_CMR <- apply(average_soil_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
 pesticide_soil_CMR$all_itt <- average_soil_CMR
+pesticide_soil_CMR$all_itt[which(is.infinite(pesticide_soil_CMR$all_itt))] <- NA
 pesticide_soil_CMR_average <- st_as_sf(data.frame(pesticide_soil_CMR %>% group_by(Postal_code) %>% summarise(mean_itt = mean(all_itt, na.rm=T))))
 
 ggplot(pesticide_soil_CMR_average)+
@@ -268,6 +430,42 @@ ggplot(pesticide_soil_CMR_average)+
   theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
   theme_minimal() +
   coord_sf(xlim = c(25690,1181938),ylim=c(6022753,7227759))
+
+average_soil_com_CMR <- pesticide_soil_com_CMR
+st_geometry(average_soil_com_CMR) <- NULL
+average_soil_com_CMR <- apply(average_soil_com_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
+pesticide_soil_com_CMR$all_itt <- average_soil_com_CMR
+pesticide_soil_com_CMR_average <- st_as_sf(data.frame(pesticide_soil_com_CMR %>% group_by(Insee_com) %>% summarise(mean_itt = mean(all_itt, na.rm=T))))
+
+ggplot(pesticide_soil_com_CMR_average)+
+  geom_sf(aes(fill=log(mean_itt+1)), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_minimal() +
+  coord_sf(xlim = c(25690,1181938),ylim=c(6022753,7227759))
+
+average_soil_qsa_CMR <- pesticide_soil_qsa_CMR
+st_geometry(average_soil_qsa_CMR) <- NULL
+average_soil_qsa_CMR <- apply(average_soil_qsa_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
+pesticide_soil_qsa_CMR$all_qsa <- average_soil_qsa_CMR
+pesticide_soil_qsa_CMR$all_qsa[which(is.infinite(pesticide_soil_qsa_CMR$all_qsa))] <- NA
+pesticide_soil_qsa_CMR_average <- st_as_sf(data.frame(pesticide_soil_qsa_CMR %>% group_by(Postal_code) %>% summarise(mean_qsa = mean(all_qsa, na.rm=T))))
+
+average_soil_qsa_com_CMR <- pesticide_soil_qsa_com_CMR
+st_geometry(average_soil_qsa_com_CMR) <- NULL
+average_soil_qsa_com_CMR <- apply(average_soil_qsa_com_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
+pesticide_soil_qsa_com_CMR$all_qsa <- average_soil_qsa_com_CMR
+pesticide_soil_qsa_com_CMR$all_qsa[which(is.infinite(pesticide_soil_qsa_com_CMR$all_qsa))] <- NA
+pesticide_soil_qsa_com_CMR_average <- st_as_sf(data.frame(pesticide_soil_qsa_com_CMR %>% group_by(Insee_com) %>% summarise(mean_qsa = mean(all_qsa, na.rm=T))))
+
+average_soil_qsa_dhsa_com_CMR <- pesticide_soil_qsa_dhsa_com_CMR
+st_geometry(average_soil_qsa_dhsa_com_CMR) <- NULL
+average_soil_qsa_dhsa_com_CMR <- apply(average_soil_qsa_dhsa_com_CMR[,-c(1:4)], 1, function(x){sum(x, na.rm=TRUE)})
+pesticide_soil_qsa_dhsa_com_CMR$all_qsa <- average_soil_qsa_dhsa_com_CMR
+pesticide_soil_qsa_dhsa_com_CMR$all_itt <- pesticide_soil_qsa_dhsa_com_CMR$all_qsa/pesticide_soil_qsa_dhsa_com_CMR$Sau2020
+pesticide_soil_qsa_dhsa_com_CMR$all_qsa[which(is.infinite(pesticide_soil_qsa_dhsa_com_CMR$all_qsa))] <- NA
+pesticide_soil_qsa_dhsa_com_CMR_average <- st_as_sf(data.frame(pesticide_soil_qsa_dhsa_com_CMR %>% group_by(Insee_com) %>% summarise(mean_qsa = mean(all_qsa, na.rm=T), mean_itt = mean(all_itt, na.rm=T))))
+
+
 
 average_air_CMR <- pesticide_air_CMR
 st_geometry(average_air_CMR) <- NULL
@@ -294,6 +492,10 @@ ggplot(pesticide_water_CMR_average)+
 
 #saveRDS(pesticide_soil_CMR_average,"output/pesticide_soil_CMR_average.rds")
 pesticide_soil_CMR_average <- readRDS("output/pesticide_soil_CMR_average.rds")
+#saveRDS(pesticide_soil_com_CMR_average,"output/pesticide_soil_com_CMR_average.rds")
+pesticide_soil_com_CMR_average <- readRDS("output/pesticide_soil_com_CMR_average.rds")
+#saveRDS(pesticide_soil_qsa_dhsa_com_CMR_average,"output/pesticide_soil_qsa_dhsa_com_CMR_average.rds")
+pesticide_soil_qsa_dhsa_com_CMR_average <- readRDS("output/pesticide_soil_qsa_dhsa_com_CMR_average.rds")
 #saveRDS(pesticide_air_CMR_average,"output/pesticide_air_CMR_average.rds")
 pesticide_air_CMR_average <- readRDS("output/pesticide_air_CMR_average.rds")
 #saveRDS(pesticide_water_CMR_average,"output/pesticide_water_CMR_average.rds")
@@ -301,7 +503,6 @@ pesticide_water_CMR_average <- readRDS("output/pesticide_water_CMR_average.rds")
 
 # rescale values
 
-pesticide_soil_CMR_average$mean_itt[which(is.infinite(pesticide_soil_CMR_average$mean_itt))] <- NA
 threshold_soil <- quantile(pesticide_soil_CMR_average$mean_itt,0.995 ,na.rm = TRUE)
 pesticide_soil_CMR_average$mean_itt[which(pesticide_soil_CMR_average$mean_itt>threshold_soil)] <- threshold_soil
 pesticide_soil_CMR_average$mean_itt_scale <- scales::rescale(pesticide_soil_CMR_average$mean_itt)
@@ -315,6 +516,50 @@ ggsave("output/figure_sa_use.png",
        width = 6,
        height = 6,
        dpi = 400)
+
+threshold_soil_com <- quantile(pesticide_soil_com_CMR_average$mean_itt,0.995 ,na.rm = TRUE)
+pesticide_soil_com_CMR_average$mean_itt[which(pesticide_soil_com_CMR_average$mean_itt>threshold_soil_com)] <- threshold_soil_com
+pesticide_soil_com_CMR_average$mean_itt_scale <- scales::rescale(pesticide_soil_com_CMR_average$mean_itt)
+ggplot(pesticide_soil_com_CMR_average)+
+  geom_sf(aes(fill=mean_itt), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void() +
+  coord_sf(xlim = c(25690,1181938),ylim=c(6022753,7227759))
+
+ggsave("output/figure_sa_com_use.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
+
+threshold_soil_qsa_dhsa_com <- quantile(pesticide_soil_qsa_dhsa_com_CMR_average$mean_qsa,0.995 ,na.rm = TRUE)
+pesticide_soil_qsa_dhsa_com_CMR_average$mean_qsa[which(pesticide_soil_qsa_dhsa_com_CMR_average$mean_qsa>threshold_soil_qsa_dhsa_com)] <- threshold_soil_qsa_dhsa_com
+pesticide_soil_qsa_dhsa_com_CMR_average$mean_qsa_scale <- scales::rescale(pesticide_soil_qsa_dhsa_com_CMR_average$mean_qsa)
+ggplot(pesticide_soil_qsa_dhsa_com_CMR_average)+
+  geom_sf(aes(fill=mean_qsa), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void() +
+  coord_sf(xlim = c(25690,1181938),ylim=c(6022753,7227759))
+ggsave("output/figure_sa_com_qsa_accurate.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
+
+threshold_soil_qsa_dhsa_com <- quantile(pesticide_soil_qsa_dhsa_com_CMR_average$mean_itt,0.995 ,na.rm = TRUE)
+pesticide_soil_qsa_dhsa_com_CMR_average$mean_itt[which(pesticide_soil_qsa_dhsa_com_CMR_average$mean_itt>threshold_soil_qsa_dhsa_com)] <- threshold_soil_qsa_dhsa_com
+pesticide_soil_qsa_dhsa_com_CMR_average$mean_itt_scale <- scales::rescale(pesticide_soil_qsa_dhsa_com_CMR_average$mean_itt)
+ggplot(pesticide_soil_qsa_dhsa_com_CMR_average)+
+  geom_sf(aes(fill=mean_itt), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void() +
+  coord_sf(xlim = c(25690,1181938),ylim=c(6022753,7227759))
+
+ggsave("output/figure_sa_com_use_accurate.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
+
+
+
 
 threshold_air <- quantile(pesticide_air_CMR_average$mean_concentration,0.995)
 pesticide_air_CMR_average$mean_concentration[which(pesticide_air_CMR_average$mean_concentration>threshold_air)] <- threshold_air

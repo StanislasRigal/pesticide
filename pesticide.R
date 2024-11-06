@@ -392,13 +392,22 @@ SAU <- read.csv2("raw_data/agri.csv",header=T)
 
 code_postal_insee <- data.frame(code_postal[,c("insee_com","postal_code","nom_comm","superficie")])
 
-code_postal_insee_SAU <- merge(code_postal_insee,SAU, by.x="insee_com", by.y="codgeo", all.x=TRUE)
+code_postal_insee_SAU_init <- merge(code_postal_insee,SAU, by.x="insee_com", by.y="codgeo", all.x=TRUE)
 
-code_postal_insee_SAU <- data.frame(code_postal_insee_SAU %>% group_by(postal_code) %>% summarize(superficie_tot=sum(superficie, na.rm=TRUE),
+code_postal_insee_SAU <- data.frame(code_postal_insee_SAU_init %>% group_by(postal_code) %>% summarize(superficie_tot=sum(superficie, na.rm=TRUE),
                                                                                                   sau_tot = sum(sau2020, na.rm = TRUE)))
 
-saveRDS(code_postal_insee_SAU,"output/code_postal_insee_SAU.rds")
+#saveRDS(code_postal_insee_SAU,"output/code_postal_insee_SAU.rds")
 code_postal_insee_SAU <- readRDS("output/code_postal_insee_SAU.rds")
+
+code_postal_insee_SAU_com <- merge(code_postal_insee_SAU_init,code_postal_insee_SAU, by="postal_code", all.x=TRUE)
+code_postal_insee_SAU_com$sau2020[which(is.na(code_postal_insee_SAU_com$sau2020))] <- code_postal_insee_SAU_com$sau_tot[which(is.na(code_postal_insee_SAU_com$sau2020))] * code_postal_insee_SAU_com$superficie[which(is.na(code_postal_insee_SAU_com$sau2020))] / code_postal_insee_SAU_com$superficie_tot[which(is.na(code_postal_insee_SAU_com$sau2020))]
+code_postal_insee_SAU_com$percent_SAU <- code_postal_insee_SAU_com$sau2020/code_postal_insee_SAU_com$sau_tot
+code_postal_insee_SAU_com$percent_surface <- code_postal_insee_SAU_com$superficie/code_postal_insee_SAU_com$superficie_tot
+code_postal_insee_SAU_com$geometry <- code_postal_insee_SAU_com$libgeo <- NULL
+
+#saveRDS(code_postal_insee_SAU_com,"output/code_postal_insee_SAU_com.rds")
+code_postal_insee_SAU_com <- readRDS("output/code_postal_insee_SAU_com.rds")
 
 ## get homologated usage doses per product https://www.data.gouv.fr/fr/datasets/donnees-ouvertes-du-catalogue-e-phy-des-produits-phytopharmaceutiques-matieres-fertilisantes-et-supports-de-culture-adjuvants-produits-mixtes-et-melanges/
 
@@ -520,6 +529,7 @@ itt_pesticide_year <- data.frame(itt_pesticide_year %>% complete(postal_code,ann
 code_postal_unique <- code_postal %>%  group_by(postal_code) %>% summarize(geometry = st_union(geometry))
 code_postal_unique$annee <- c(rep(2013:2022,nrow(code_postal_unique)/10),2013)
 
+
 df_code_postal_unique <- data.frame(code_postal_unique %>% complete(postal_code,annee))[,1:2]
 df_code_postal_unique <- merge(code_postal_unique[,c("postal_code")], df_code_postal_unique, by=c("postal_code"))
 
@@ -536,22 +546,56 @@ qsa_pesticide_year <- readRDS("output/qsa_pesticide_year.rds")
 itt_pesticide_year <- readRDS("output/itt_pesticide_year.rds")
 
 
+pesticide_itt_year_sau_com <- merge(code_postal_insee_SAU_com,pesticide_itt_year,by.x="postal_code",by.y="code_postal_acheteur",all.x=TRUE)
+pesticide_itt_year_sau_com$itt_sa_zip <- pesticide_itt_year_sau_com$sum_qsa_dhsa/pesticide_itt_year_sau_com$sau_tot
+pesticide_itt_year_sau_com$itt_sa_com <- pesticide_itt_year_sau_com$itt_sa_zip * pesticide_itt_year_sau_com$percent_SAU
+pesticide_itt_year_sau_com$sum_qsa_com <- pesticide_itt_year_sau_com$sum_qsa * pesticide_itt_year_sau_com$percent_SAU
+pesticide_itt_year_sau_com$sum_qsa_dhas_com <- pesticide_itt_year_sau_com$sum_qsa_dhsa * pesticide_itt_year_sau_com$percent_SAU
+
+#saveRDS(pesticide_itt_year_sau_com,"output/pesticide_itt_year_sau_com.rds")
+pesticide_itt_year_sau_com <- readRDS("output/pesticide_itt_year_sau_com.rds")
+
+# from https://doi.org/10.1016/j.jclepro.2023.136880
+control_df <- pesticide_itt_year_sau_com[which(pesticide_itt_year_sau_com$insee_com %in% c(35270,35247,35222,35248,35329,35339,35354)),]
+control_df_com <- data.frame(control_df %>% group_by(insee_com,nom_comm,annee) %>% summarize(itt_com=sum(itt_sa_com, na.rm=TRUE), sum_qsa_com2 = sum(sum_qsa_com, na.rm=TRUE)))
+control_df2 <- pesticide_itt_year_sau[which(pesticide_itt_year_sau$postal_code==35610),]
+control_df2_zip <- data.frame(control_df2 %>% group_by(postal_code,annee) %>% summarize(itt_zip=sum(itt, na.rm=TRUE), sum_qsa_zip = sum(sum_qsa, na.rm=TRUE)))
+control_df2_zip$sum_qsa_ha <- control_df2_zip$sum_qsa_zip/unique(control_df2$sau_tot)
 
 
+control_df3 <- pesticide_itt_year_sau_com[which(pesticide_itt_year_sau_com$insee_com %in% c(76353,76158,76309,76134)),]
+control_df3_com <- data.frame(control_df3 %>% group_by(annee) %>% summarize(itt_com=sum(itt_sa_com, na.rm=TRUE), sum_qsa_com2 = sum(sum_qsa_com, na.rm=TRUE)))
+
+qsa_pesticide_year_com <- dcast(pesticide_itt_year_sau_com, insee_com + annee ~ substance, value.var = "sum_qsa_com")
+itt_pesticide_year_com <- dcast(pesticide_itt_year_sau_com, insee_com + annee ~ substance, value.var = "itt_sa_com")
+qsa_dhsa_pesticide_year_com <- dcast(pesticide_itt_year_sau_com, insee_com + annee + sau2020 + sau_tot ~ substance, value.var = "sum_qsa_dhas_com")
+
+qsa_pesticide_year_com <- data.frame(qsa_pesticide_year_com %>% complete(insee_com,annee))
+itt_pesticide_year_com <- data.frame(itt_pesticide_year_com %>% complete(insee_com,annee))
+qsa_dhsa_pesticide_year_com <- data.frame(qsa_dhsa_pesticide_year_com %>% complete(insee_com,annee))
 
 
+code_postal_unique_com <- code_postal
+code_postal_unique_com$annee <- c(rep(2013:2022,nrow(code_postal_unique_com)/10),2013,2014)
+
+df_code_postal_unique_com <- data.frame(code_postal_unique_com %>% complete(insee_com,annee))[,1:2]
+df_code_postal_unique_com <- merge(code_postal_unique_com[,c("insee_com")], df_code_postal_unique_com, by=c("insee_com"))
+
+qsa_pesticide_year_com <- merge(df_code_postal_unique_com,qsa_pesticide_year_com,by=c("insee_com","annee"),all.x=TRUE)
+itt_pesticide_year_com <- merge(df_code_postal_unique_com,itt_pesticide_year_com,by=c("insee_com","annee"),all.x=TRUE)
+qsa_dhsa_pesticide_year_com <- merge(df_code_postal_unique_com,qsa_dhsa_pesticide_year_com,by=c("insee_com","annee"),all.x=TRUE)
+
+qsa_pesticide_year_com <- st_transform(qsa_pesticide_year_com,crs = "EPSG:2154")
+itt_pesticide_year_com <- st_transform(itt_pesticide_year_com,crs = "EPSG:2154")
+qsa_dhsa_pesticide_year_com <- st_transform(qsa_dhsa_pesticide_year_com,crs = "EPSG:2154")
 
 
-
-
-
-
-
-
-
-
-
-
+#saveRDS(qsa_pesticide_year_com,"output/qsa_pesticide_year_com.rds")
+qsa_pesticide_year_com <- readRDS("output/qsa_pesticide_year_com.rds")
+#saveRDS(itt_pesticide_year_com,"output/itt_pesticide_year_com.rds")
+itt_pesticide_year_com <- readRDS("output/itt_pesticide_year_com.rds")
+#saveRDS(qsa_dhsa_pesticide_year_com,"output/qsa_dhsa_pesticide_year_com.rds")
+qsa_dhsa_pesticide_year_com <- readRDS("output/qsa_dhsa_pesticide_year_com.rds")
 
 
 
