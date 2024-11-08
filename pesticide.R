@@ -568,7 +568,7 @@ control_df3_com <- data.frame(control_df3 %>% group_by(annee) %>% summarize(itt_
 
 qsa_pesticide_year_com <- dcast(pesticide_itt_year_sau_com, insee_com + annee ~ substance, value.var = "sum_qsa_com")
 itt_pesticide_year_com <- dcast(pesticide_itt_year_sau_com, insee_com + annee ~ substance, value.var = "itt_sa_com")
-qsa_dhsa_pesticide_year_com <- dcast(pesticide_itt_year_sau_com, insee_com + annee + sau2020 + sau_tot ~ substance, value.var = "sum_qsa_dhas_com")
+qsa_dhsa_pesticide_year_com <- dcast(pesticide_itt_year_sau_com, insee_com + annee + sau2020 + sau_tot + superficie + superficie_tot ~ substance, value.var = "sum_qsa_dhas_com")
 
 qsa_pesticide_year_com <- data.frame(qsa_pesticide_year_com %>% complete(insee_com,annee))
 itt_pesticide_year_com <- data.frame(itt_pesticide_year_com %>% complete(insee_com,annee))

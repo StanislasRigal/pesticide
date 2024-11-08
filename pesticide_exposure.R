@@ -20,13 +20,17 @@ substance_active <- read.csv2("raw_data/decisionamm-intrant-format-csv-20240710-
 
 names(df_sa_year_long)[which(!(names(df_sa_year_long) %in% substance_active$Nom.substance.active))]
 
-names(df_sa_year_long)[which(!(names(df_sa_year_long) %in% substance_active$Nom.substance.active))][-c(1:3)] <- c("Abamectin","Azoxystrobin","Bifenthrin","Bromoxynil","Captan",
-                                                                                                                 "Chloridazon","Chlorpropham","Chlorthal-dimethyl","Chlortoluron","Clothianidin",
-                                                                                                                 "Cyazofamid","Cyfluthrin","Fenhexamid","Fenpropidin","Fenpropimorph",  
-                                                                                                                 "Flonicamid","Florasulam","Flumioxazin","Folpet","Imidacloprid",       
-                                                                                                                 "Indoxacarb","Picoxystrobin","Propachlor","Prosulfocarb","Pyraclostrobin",     
-                                                                                                                 "Thiacloprid","Thiram","Tri-allate","Trifloxystrobin","Trifluralin",       
-                                                                                                                 "Ziram")
+names(df_sa_year_long)[which(!(names(df_sa_year_long) %in% substance_active$Nom.substance.active))][-c(1:3)] <- c("MCPA","Abamectin","Acetamiprid","1,2,4-triazole","Azoxystrobin",
+                                                                                                                  "Bifenthrin","Bromoxynil","Captan","Chloridazon","Chlorpropham",
+                                                                                                                  "Chlorthal-dimethyl","Clothianidin","Cyazofamid","Cyfluthrin","Cypermethrin",
+                                                                                                                  "Deltamethrin","Diclofop","Diflufenican","Dimethenamid-P","Dimethomorph",
+                                                                                                                  "Fenoxycarb","Fenpropidin","Fenpropimorph","Flonicamid","Florasulam",
+                                                                                                                  "Flumioxazin","Folpet","Imidacloprid","Indoxacarb","Ioxynil",
+                                                                                                                  "Mandipropamid","Metamitron","Metazachlor","Metribuzin","Oxyfluorfen",
+                                                                                                                  "Pendimethalin","Permethrin","Phenmedipham","Picoxystrobin","Propachlor",
+                                                                                                                  "Prosulfocarb","Pyraclostrobin","Pyrethrin","Pirimicarb","Tefluthrin",
+                                                                                                                  "Thiacloprid","Thiodicarb","Thiram","Tri-allate","Trifloxystrobin",
+                                                                                                                  "Trifluralin","Ziram")
 
 names(bassin_versant_all_year)[which(!(names(bassin_versant_all_year) %in% substance_active$Nom.substance.active))]
 
@@ -271,10 +275,10 @@ qsa_pesticide_year_com$`Sulfate de fer sulfate ferreux heptahydrate ` <-  NULL
 
 
 names(qsa_dhsa_pesticide_year_com) <- gsub('\\.', ' ', names(qsa_dhsa_pesticide_year_com))
-names(qsa_dhsa_pesticide_year_com)[-c(351:352)] <- foo(names(qsa_dhsa_pesticide_year_com)[-c(351:352)])
+names(qsa_dhsa_pesticide_year_com)[-c(353:354)] <- foo(names(qsa_dhsa_pesticide_year_com)[-c(353:354)])
 names(qsa_dhsa_pesticide_year_com)[which(!(names(qsa_dhsa_pesticide_year_com) %in% substance_active$Nom.substance.active))]
 
-names(qsa_dhsa_pesticide_year_com)[which(!(names(qsa_dhsa_pesticide_year_com) %in% substance_active$Nom.substance.active))][-c(1:4,208:209)] <- c("(E,Z)-7,9-Dodecadien-1-yl Acetate","Z-13-hexadecen-11-yn-1-yl acetate","Straight Chain Lepidopteran Pheromones","1,3-Dichloropropene","2,4-D","2,4-DB",
+names(qsa_dhsa_pesticide_year_com)[which(!(names(qsa_dhsa_pesticide_year_com) %in% substance_active$Nom.substance.active))][-c(1:6,210:211)] <- c("(E,Z)-7,9-Dodecadien-1-yl Acetate","Z-13-hexadecen-11-yn-1-yl acetate","Straight Chain Lepidopteran Pheromones","1,3-Dichloropropene","2,4-D","2,4-DB",
                                                                                                                                         "MCPA","MCPB","6-Benzyladenine","8-Hydroxyquinoline incl. oxyquinoleine","Abamectin","Acetamiprid",
                                                                                                                                         "Straight Chain Lepidopteran Pheromones","Acetate de z 8 dodecenyle","Acibenzolar-S-methyl","Acetic acid","1-Naphtylacetic acid","Gibberellic acid",
                                                                                                                                         "Acide octanoique","Fatty acids","Potassium phosphonates","Acrinathrin","Naphtylacetic acid hydrazide","Alphamethrine",
@@ -407,7 +411,7 @@ pesticide_soil_CMR <- itt_pesticide_year[,c(1,2,which(names(itt_pesticide_year) 
 pesticide_soil_com_CMR <- itt_pesticide_year_com[,c(1,2,which(names(itt_pesticide_year_com) %in% mandatory_all & names(itt_pesticide_year_com) %in% sa_TTCMR))]
 pesticide_soil_qsa_CMR <- qsa_pesticide_year[,c(1,2,which(names(qsa_pesticide_year) %in% mandatory_all & names(qsa_pesticide_year) %in% sa_TTCMR))]
 pesticide_soil_qsa_com_CMR <- qsa_pesticide_year_com[,c(1,2,which(names(qsa_pesticide_year_com) %in% mandatory_all & names(qsa_pesticide_year_com) %in% sa_TTCMR))]
-pesticide_soil_qsa_dhsa_com_CMR <- qsa_dhsa_pesticide_year_com[,c(1:4,which(names(qsa_dhsa_pesticide_year_com) %in% mandatory_all & names(qsa_dhsa_pesticide_year_com) %in% sa_TTCMR))]
+pesticide_soil_qsa_dhsa_com_CMR <- qsa_dhsa_pesticide_year_com[,c(1:6,which(names(qsa_dhsa_pesticide_year_com) %in% mandatory_all & names(qsa_dhsa_pesticide_year_com) %in% sa_TTCMR))]
 pesticide_air_CMR <- df_sa_year_long[,c(1,2,which(names(df_sa_year_long) %in% mandatory_all & names(df_sa_year_long) %in% sa_TTCMR))]
 pesticide_water_CMR <- bassin_versant_all_year[,c(1,2,which(names(bassin_versant_all_year) %in% mandatory_all & names(bassin_versant_all_year) %in% sa_TTCMR))]
 
@@ -459,10 +463,10 @@ pesticide_soil_qsa_com_CMR_average <- st_as_sf(data.frame(pesticide_soil_qsa_com
 
 average_soil_qsa_dhsa_com_CMR <- pesticide_soil_qsa_dhsa_com_CMR
 st_geometry(average_soil_qsa_dhsa_com_CMR) <- NULL
-average_soil_qsa_dhsa_com_CMR <- apply(average_soil_qsa_dhsa_com_CMR[,-c(1:4)], 1, function(x){sum(x, na.rm=TRUE)})
+average_soil_qsa_dhsa_com_CMR <- apply(average_soil_qsa_dhsa_com_CMR[,-c(1:6)], 1, function(x){sum(x, na.rm=TRUE)})
 pesticide_soil_qsa_dhsa_com_CMR$all_qsa <- average_soil_qsa_dhsa_com_CMR
-pesticide_soil_qsa_dhsa_com_CMR$all_itt <- pesticide_soil_qsa_dhsa_com_CMR$all_qsa/pesticide_soil_qsa_dhsa_com_CMR$Sau2020
-pesticide_soil_qsa_dhsa_com_CMR$all_qsa[which(is.infinite(pesticide_soil_qsa_dhsa_com_CMR$all_qsa))] <- NA
+pesticide_soil_qsa_dhsa_com_CMR$all_itt <- pesticide_soil_qsa_dhsa_com_CMR$all_qsa/pesticide_soil_qsa_dhsa_com_CMR$Superficie
+#pesticide_soil_qsa_dhsa_com_CMR$all_qsa[which(is.infinite(pesticide_soil_qsa_dhsa_com_CMR$all_qsa))] <- NA
 pesticide_soil_qsa_dhsa_com_CMR_average <- st_as_sf(data.frame(pesticide_soil_qsa_dhsa_com_CMR %>% group_by(Insee_com) %>% summarise(mean_qsa = mean(all_qsa, na.rm=T), mean_itt = mean(all_itt, na.rm=T))))
 
 
@@ -588,14 +592,20 @@ ggsave("output/figure_sa_water.png",
        dpi = 400)
 
 pesticide_soil_CMR_average <- pesticide_soil_CMR_average[which(as.numeric(str_sub(pesticide_soil_CMR_average$Postal_code,1,2)) < 96),]
+pesticide_soil_qsa_dhsa_com_CMR_average <- pesticide_soil_qsa_dhsa_com_CMR_average[which(str_sub(pesticide_soil_qsa_dhsa_com_CMR_average$Insee_com,1,2) != "97"),]
 
 
-st_write(pesticide_soil_CMR_average,dsn="output/pesticide_CMR_soil.gpkg")
+#st_write(pesticide_soil_CMR_average,dsn="output/pesticide_CMR_soil.gpkg")
+st_write(pesticide_soil_qsa_dhsa_com_CMR_average,dsn="output/pesticide_CMR_soil.gpkg")
 st_write(pesticide_air_CMR_average,dsn="output/pesticide_CMR_air.gpkg")
 st_write(pesticide_water_CMR_average,dsn="output/pesticide_CMR_water.gpkg")
 
 
 # combine maps
+
+pesticide_soil_CMR_average <- st_read("output/pesticide_CMR_soil.gpkg")
+pesticide_air_CMR_average <- st_read("output/pesticide_CMR_air.gpkg")
+pesticide_water_CMR_average <- st_read("output/pesticide_CMR_water.gpkg")
 
 max_soil <- max(na.omit(pesticide_soil_CMR_average$mean_itt))*2
 max_air <- max(pesticide_air_CMR_average$mean_concentration)*2
@@ -653,21 +663,31 @@ st_write(Combined_exposure_to_active_substance_in_use_air_and_water,dsn="output/
 # maps by year
 
 
-pesticide_soil_CMR <- readRDS("output/pesticide_soil_CMR.rds")
+pesticide_soil_CMR <- readRDS("output/pesticide_soil_qsa_dhsa_com_CMR.rds") #readRDS("output/pesticide_soil_CMR.rds")
 pesticide_air_CMR <- readRDS("output/pesticide_air_CMR.rds")
 pesticide_water_CMR <- readRDS("output/pesticide_water_CMR.rds")
 
 
+#average_soil_CMR <- pesticide_soil_CMR
+#st_geometry(average_soil_CMR) <- NULL
+#average_soil_CMR <- apply(average_soil_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
+#pesticide_soil_CMR$all_itt <- average_soil_CMR
+#pesticide_soil_CMR_average_year <- st_as_sf(data.frame(data.frame(pesticide_soil_CMR) %>% group_by(Postal_code,geometry,Annee) %>% summarise(mean_itt = mean(all_itt, na.rm=T))))
+#pesticide_soil_CMR_average_year$mean_itt[which(is.infinite(pesticide_soil_CMR_average_year$mean_itt))] <- NA
+#threshold_soil <- quantile(pesticide_soil_CMR_average_year$mean_itt,0.995 ,na.rm = TRUE)
+#pesticide_soil_CMR_average_year$mean_itt[which(pesticide_soil_CMR_average_year$mean_itt>threshold_soil)] <- threshold_soil
+#pesticide_soil_CMR_average_year$mean_itt_scale <- scales::rescale(pesticide_soil_CMR_average_year$mean_itt)
+
 average_soil_CMR <- pesticide_soil_CMR
 st_geometry(average_soil_CMR) <- NULL
-average_soil_CMR <- apply(average_soil_CMR[,-c(1,2)], 1, function(x){sum(x, na.rm=TRUE)})
-pesticide_soil_CMR$all_itt <- average_soil_CMR
-pesticide_soil_CMR_average_year <- st_as_sf(data.frame(data.frame(pesticide_soil_CMR) %>% group_by(Postal_code,geometry,Annee) %>% summarise(mean_itt = mean(all_itt, na.rm=T))))
+iit_CMR <- apply(average_soil_CMR[,-c(1:6)], 2, function(x,div){x/div}, div=average_soil_CMR$Superficie)
+pesticide_soil_CMR[,7:(ncol(pesticide_soil_CMR)-1)] <- iit_CMR
 
-pesticide_soil_CMR_average_year$mean_itt[which(is.infinite(pesticide_soil_CMR_average_year$mean_itt))] <- NA
+average_soil_CMR <- apply(iit_CMR, 1, function(x){sum(x, na.rm=TRUE)})
+pesticide_soil_CMR$all_itt <- average_soil_CMR
+pesticide_soil_CMR_average_year <- st_as_sf(data.frame(data.frame(pesticide_soil_CMR) %>% group_by(Insee_com,geometry,Annee) %>% summarise(mean_itt = mean(all_itt, na.rm=T))))
 threshold_soil <- quantile(pesticide_soil_CMR_average_year$mean_itt,0.995 ,na.rm = TRUE)
 pesticide_soil_CMR_average_year$mean_itt[which(pesticide_soil_CMR_average_year$mean_itt>threshold_soil)] <- threshold_soil
-#pesticide_soil_CMR_average_year$mean_itt_scale <- scales::rescale(pesticide_soil_CMR_average_year$mean_itt)
 
 ggplot(pesticide_soil_CMR_average_year[which(pesticide_soil_CMR_average_year$Annee==2013),])+
   geom_sf(aes(fill=mean_itt), colour=NA) +
@@ -708,15 +728,16 @@ ggplot(pesticide_water_CMR_average_year[which(pesticide_water_CMR_average_year$y
 
 names(pesticide_soil_CMR_average_year)[2] <- "year"
 
+pesticide_soil_CMR_average_year <- pesticide_soil_CMR_average_year[which(str_sub(pesticide_soil_CMR_average_year$Insee_com,1,2) != "97"),]
+
+
 st_write(pesticide_soil_CMR_average_year,dsn="output/pesticide_CMR_soil_year.gpkg")
 st_write(pesticide_air_CMR_average_year,dsn="output/pesticide_CMR_air_year.gpkg")
 st_write(pesticide_water_CMR_average_year,dsn="output/pesticide_CMR_water_year.gpkg")
 
 
 
-# technical validation with adonis IFT from solagro https://solagro.org/nos-domaines-d-intervention/agroecologie/carte-pesticides-adonis
-
-## maps for 2020 and 2021
+## maps for 2013 to 2022
 
 max_soil <- max(na.omit(pesticide_soil_CMR_average_year$mean_itt))*2
 max_air <- max(pesticide_air_CMR_average_year$mean_concentration)*2
@@ -1193,6 +1214,8 @@ ggsave("output/figure_trend_se.png",
        width = 6,
        height = 6,
        dpi = 400)
+
+# technical validation with adonis IFT from solagro https://solagro.org/nos-domaines-d-intervention/agroecologie/carte-pesticides-adonis
 
 ## adonis data
 

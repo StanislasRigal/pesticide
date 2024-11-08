@@ -109,20 +109,25 @@ ggplot() + geom_sf(data = fr, mapping = aes(fill = sqrt(var_pred1)),col=NA) +
 
 ## Trend model with SA use
 
-pesticide_pre_itt_sau <- readRDS("output/pesticide_pre_itt_sau.rds")
+#pesticide_pre_itt_sau <- readRDS("output/pesticide_pre_itt_sau.rds")
 #folpel_use <- pesticide_pre_itt_sau[grep("folpel",pesticide_pre_itt_sau$Substances.actives),]
-folpel_use <- pesticide_pre_itt_sau[which(pesticide_pre_itt_sau$substance=="folpel"),]
+#folpel_use <- pesticide_pre_itt_sau[which(pesticide_pre_itt_sau$substance=="folpel"),]
+pesticide_itt_year_sau_com <- readRDS("output/pesticide_itt_year_sau_com.rds")
+folpel_use <- pesticide_itt_year_sau_com[which(pesticide_itt_year_sau_com$substance=="folpel"),]
 folpel_use <- folpel_use[which(folpel_use$sau_tot > 0),]
-folpel_use <- data.frame(folpel_use %>% group_by(code_postal_acheteur,annee) %>% summarize(itt_year = sum(itt)))
-folpel_use <- data.frame(folpel_use %>% group_by(code_postal_acheteur) %>% summarize(itt_mean = mean(itt_year)))
+#folpel_use <- data.frame(folpel_use %>% group_by(code_postal_acheteur,annee) %>% summarize(itt_year = sum(itt)))
+#folpel_use <- data.frame(folpel_use %>% group_by(code_postal_acheteur) %>% summarize(itt_mean = mean(itt_year)))
+folpel_use <- data.frame(folpel_use %>% group_by(insee_com,superficie) %>% summarize(mean_qsa_com = mean(sum_qsa_com)))
+folpel_use$itt_mean <- folpel_use$mean_qsa_com/folpel_use$superficie
 
-fr_folpel_use <- merge(fr,folpel_use,by.x="postal_code",by.y="code_postal_acheteur", all.x=TRUE)
+#fr_folpel_use <- merge(fr,folpel_use,by.x="postal_code",by.y="code_postal_acheteur", all.x=TRUE)
+fr_folpel_use <- merge(fr,folpel_use,by="insee_com", all.x=TRUE)
 fr_folpel_use$itt_mean[which(is.na(fr_folpel_use$itt_mean))] <- 0
-ggplot() + geom_sf(data = fr_folpel_use, mapping = aes(fill = sqrt(itt_mean)),col=NA) +
-  scale_fill_gradientn(colors = sf.colors(20))
+ggplot() + geom_sf(data = fr_folpel_use, mapping = aes(fill = itt_mean),col=NA) +
+  scale_fill_gradientn(colors = sf.colors(20), transform="sqrt")
 
 folpel_air_use <- st_intersection(pesticide_air_folpel_sf,fr_folpel_use)
-folpel_air_use <- folpel_air_use[which(folpel_air_use$itt_mean<1),]
+#folpel_air_use <- folpel_air_use[which(folpel_air_use$itt_mean<1),]
 summary(lm(qte~sqrt(itt_mean), folpel_air_use))
 
 vr <- variogram(qte~sqrt(itt_mean), folpel_air_use,cutoff=40000)
@@ -143,21 +148,22 @@ ar <- exact_extract(kr_rast, fr, fun = "mean")
 ar_var <- exact_extract(kr_rast, fr, fun = "variance")
 fr$pred1_r <- ar$mean.var1.pred_var1.pred
 fr$var_pred1_r <- ar_var$variance.var1.pred_var1.pred
-ggplot() + geom_sf(data = fr, mapping = aes(fill = sqrt(pred1_r)),col=NA) +
-  scale_fill_gradientn(colors = sf.colors(20))
-ggplot() + geom_sf(data = fr, mapping = aes(fill = sqrt(var_pred1)),col=NA) +
-  scale_fill_gradientn(colors = sf.colors(20))
+ggplot() + geom_sf(data = fr, mapping = aes(fill = pred1_r),col=NA) +
+  scale_fill_gradientn(colors = sf.colors(20), transform="sqrt")
+ggplot() + geom_sf(data = fr, mapping = aes(fill = var_pred1_r),col=NA) +
+  scale_fill_gradientn(colors = sf.colors(20), transform="sqrt")
 
 grd_folpel$pred_folpel <- kr[["var1.pred"]]
 grd_folpel_sf <- st_as_sf(grd_folpel)
-ggplot() + geom_sf(data = grd_folpel_sf, mapping = aes(fill = sqrt(pred_folpel)),col=NA) +
-  scale_fill_gradientn(colors = sf.colors(20))
+ggplot() + geom_sf(data = grd_folpel_sf, mapping = aes(fill = pred_folpel),col=NA) +
+  scale_fill_gradientn(colors = sf.colors(20), transform="sqrt")
 
 # generalise to all sa
 
 ## Load raw data
 
-pesticide_pre_itt_sau <- readRDS("output/pesticide_pre_itt_sau.rds")
+#pesticide_pre_itt_sau <- readRDS("output/pesticide_pre_itt_sau.rds")
+pesticide_itt_year_sau_com <- readRDS("output/pesticide_itt_year_sau_com.rds")
 
 code_postal <- sf::st_read("raw_data/correspondance-code-insee-code-postal.geojson")
 
@@ -172,7 +178,8 @@ pesticide_air_station$Concentration..ng.m3. <- as.numeric(pesticide_air_station$
 
 ## get sa molecule to follow
 
-sa_pesticide <- unique(pesticide_pre_itt_sau$Substances.actives)
+#sa_pesticide <- unique(pesticide_pre_itt_sau$Substances.actives)
+sa_pesticide <- unique(pesticide_itt_year_sau_com$substance)
 molecul_followed <- as.matrix(unique(pesticide_air_station$Substance.active))
 
 match_molecul_sa <- apply(molecul_followed,1,function(x,vect_sa){grep(x,vect_sa,ignore.case = TRUE)},vect_sa=sa_pesticide)
@@ -194,12 +201,16 @@ for(i in 1:length(unique(pesticide_air_station_sub$Substance.active))){
   
   pesticide_air_sa_sf <- st_as_sf(pesticide_air_sa, crs = "EPSG:2154", coords = c("xlamb93", "ylamb93"))
   
-  sa_use <- pesticide_pre_itt_sau[which(pesticide_pre_itt_sau$Substances.actives %in% sa_name_use),]
+  #sa_use <- pesticide_pre_itt_sau[which(pesticide_pre_itt_sau$Substances.actives %in% sa_name_use),]
+  sa_use <- pesticide_itt_year_sau_com[which(pesticide_itt_year_sau_com$substance %in% sa_name_use),]
   sa_use <- sa_use[which(sa_use$sau_tot > 0),]
-  sa_use <- data.frame(sa_use %>% group_by(code_postal_acheteur,annee) %>% summarize(itt_year = sum(itt)))
-  sa_use <- data.frame(sa_use %>% group_by(code_postal_acheteur) %>% summarize(itt_mean = mean(itt_year)))
+  #sa_use <- data.frame(sa_use %>% group_by(code_postal_acheteur,annee) %>% summarize(itt_year = sum(itt)))
+  #sa_use <- data.frame(sa_use %>% group_by(code_postal_acheteur) %>% summarize(itt_mean = mean(itt_year)))
+  sa_use <- data.frame(sa_use %>% group_by(insee_com,superficie) %>% summarize(mean_qsa_com = mean(sum_qsa_com)))
+  sa_use$itt_mean <- sa_use$mean_qsa_com/sa_use$superficie
   
-  fr_sa_use <- merge(fr,sa_use,by.x="postal_code",by.y="code_postal_acheteur", all.x=TRUE)
+  #fr_sa_use <- merge(fr,sa_use,by.x="postal_code",by.y="code_postal_acheteur", all.x=TRUE)
+  fr_sa_use <- merge(fr,sa_use,by="insee_com", all.x=TRUE)
   fr_sa_use$itt_mean[which(is.na(fr_sa_use$itt_mean))] <- 0
   
   sa_air_use <- st_intersection(pesticide_air_sa_sf,fr_sa_use)
@@ -248,8 +259,8 @@ for(i in 1:length(unique(pesticide_air_station_sub$Substance.active))){
 saveRDS(fr_air_all,"output/fr_air_all.rds")
 fr_air_all <- readRDS("output/fr_air_all.rds")
 
-ggplot() + geom_sf(data = fr_air_all, mapping = aes(fill = sqrt(Aclonifen)),col=NA) +
-  scale_fill_gradientn(colors = sf.colors(20))
+ggplot() + geom_sf(data = fr_air_all, mapping = aes(fill = Aclonifen),col=NA) +
+  scale_fill_gradientn(colors = sf.colors(20), transform="sqrt")
 
 fr_air_df <- fr_air_all
 st_geometry(fr_air_df) <- NULL
@@ -278,68 +289,73 @@ for(i in 1:length(unique(pesticide_air_station_sub$Substance.active))){ #
   
   pesticide_air_sa <- pesticide_air_sa[which(pesticide_air_sa$Annee > 2012),]
   
-  year_follow <- sort(unique(pesticide_air_sa$Annee))
-  
-  for(y in year_follow[1]:year_follow[length(year_follow)]){
+  if(nrow(pesticide_air_sa) > 0){
+    year_follow <- sort(unique(pesticide_air_sa$Annee))
     
-    pesticide_air_sa_y <- pesticide_air_sa[which(pesticide_air_sa$Annee == y),]
-    
-    pesticide_air_sa_sf <- st_as_sf(pesticide_air_sa_y, crs = "EPSG:2154", coords = c("xlamb93", "ylamb93"))
-    
-    sa_use <- pesticide_pre_itt_sau[which(pesticide_pre_itt_sau$Substances.actives %in% sa_name_use & pesticide_pre_itt_sau$annee == y),]
-    sa_use <- sa_use[which(sa_use$sau_tot > 0),]
-    sa_use <- data.frame(sa_use %>% group_by(code_postal_acheteur,annee) %>% summarize(itt_year = sum(itt)))
-    sa_use <- data.frame(sa_use %>% group_by(code_postal_acheteur) %>% summarize(itt_mean = mean(itt_year)))
-    
-    fr_sa_use <- merge(fr,sa_use,by.x="postal_code",by.y="code_postal_acheteur", all.x=TRUE)
-    fr_sa_use$itt_mean[which(is.na(fr_sa_use$itt_mean))] <- 0
-    
-    sa_air_use <- st_intersection(pesticide_air_sa_sf,fr_sa_use)
-    sa_air_use <- sa_air_use[which(sa_air_use$itt_mean<1),]
-    
-    if(nrow(sa_air_use) > 9 & max(sa_air_use$qte > 0)){
-      if(max(sa_air_use$itt_mean) > 0){
+    for(y in year_follow[1]:year_follow[length(year_follow)]){
+      
+      pesticide_air_sa_y <- pesticide_air_sa[which(pesticide_air_sa$Annee == y),]
+      
+      pesticide_air_sa_sf <- st_as_sf(pesticide_air_sa_y, crs = "EPSG:2154", coords = c("xlamb93", "ylamb93"))
+      
+      #sa_use <- pesticide_pre_itt_sau[which(pesticide_pre_itt_sau$Substances.actives %in% sa_name_use & pesticide_pre_itt_sau$annee == y),]
+      sa_use <- pesticide_itt_year_sau_com[which(pesticide_itt_year_sau_com$substance %in% sa_name_use & pesticide_itt_year_sau_com$annee == y),]
+      sa_use <- sa_use[which(sa_use$sau_tot > 0),]
+      #sa_use <- data.frame(sa_use %>% group_by(code_postal_acheteur,annee) %>% summarize(itt_year = sum(itt)))
+      #sa_use <- data.frame(sa_use %>% group_by(code_postal_acheteur) %>% summarize(itt_mean = mean(itt_year)))
+      sa_use <- data.frame(sa_use %>% group_by(insee_com,superficie) %>% summarize(mean_qsa_com = mean(sum_qsa_com)))
+      sa_use$itt_mean <- sa_use$mean_qsa_com/sa_use$superficie
+      
+      #fr_sa_use <- merge(fr,sa_use,by.x="postal_code",by.y="code_postal_acheteur", all.x=TRUE)
+      fr_sa_use <- merge(fr,sa_use,by="insee_com", all.x=TRUE)
+      fr_sa_use$itt_mean[which(is.na(fr_sa_use$itt_mean))] <- 0
+      
+      sa_air_use <- st_intersection(pesticide_air_sa_sf,fr_sa_use)
+      sa_air_use <- sa_air_use[which(sa_air_use$itt_mean<1),]
+      
+      if(nrow(sa_air_use) > 9 & max(sa_air_use$qte > 0)){
+        if(max(sa_air_use$itt_mean) > 0){
+          
+          vr <- variogram(qte~itt_mean, sa_air_use,cutoff=100000)
+          vr.m <- fit.variogram(vr, vgm("Exp"))
+          #plot(vr, vr.m, plot.numbers = TRUE)
+          
+          ### Kriging with SA use
+          
+          grd_sa <- st_rasterize(fr_sa_use, st_crop(st_as_stars(st_bbox(fr),dx = 1000),fr))
+          st_crs(grd_sa) <- st_crs(fr_sa_use)
+          
+          kr <- krige(qte~itt_mean, sa_air_use, grd_sa["itt_mean"], vr.m)
+          
+        }else{
+          
+          vr <- variogram(qte~1, sa_air_use,cutoff=100000)
+          vr.m <- fit.variogram(vr, vgm("Exp"))
+          #plot(vr, vr.m, plot.numbers = TRUE)
+          
+          ### Kriging with SA use
+          
+          grd_sa <- st_rasterize(fr_sa_use, st_crop(st_as_stars(st_bbox(fr),dx = 1000),fr))
+          st_crs(grd_sa) <- st_crs(fr_sa_use)
+          
+          kr <- krige(qte~1, sa_air_use, grd_sa["itt_mean"], vr.m)
+          
+        }
         
-        vr <- variogram(qte~itt_mean, sa_air_use,cutoff=100000)
-        vr.m <- fit.variogram(vr, vgm("Exp"))
-        #plot(vr, vr.m, plot.numbers = TRUE)
+        grd_sa$pred_sa <- kr[["var1.pred"]]
+        grd_sa_sf <- st_as_sf(grd_sa)
         
-        ### Kriging with SA use
-        
-        grd_sa <- st_rasterize(fr_sa_use, st_crop(st_as_stars(st_bbox(fr),dx = 1000),fr))
-        st_crs(grd_sa) <- st_crs(fr_sa_use)
-        
-        kr <- krige(qte~itt_mean, sa_air_use, grd_sa["itt_mean"], vr.m)
-        
+        fr_air_all_year$new_col <- grd_sa_sf$pred_sa
       }else{
         
-        vr <- variogram(qte~1, sa_air_use,cutoff=100000)
-        vr.m <- fit.variogram(vr, vgm("Exp"))
-        #plot(vr, vr.m, plot.numbers = TRUE)
-        
-        ### Kriging with SA use
-        
-        grd_sa <- st_rasterize(fr_sa_use, st_crop(st_as_stars(st_bbox(fr),dx = 1000),fr))
-        st_crs(grd_sa) <- st_crs(fr_sa_use)
-        
-        kr <- krige(qte~1, sa_air_use, grd_sa["itt_mean"], vr.m)
+        fr_air_all_year$new_col <- NA
         
       }
       
-      grd_sa$pred_sa <- kr[["var1.pred"]]
-      grd_sa_sf <- st_as_sf(grd_sa)
-      
-      fr_air_all_year$new_col <- grd_sa_sf$pred_sa
-    }else{
-      
-      fr_air_all_year$new_col <- NA
+      names(fr_air_all_year)[which(names(fr_air_all_year) == "new_col")] <- paste0(sa_name,sep="_",y)
       
     }
-    
-    names(fr_air_all_year)[which(names(fr_air_all_year) == "new_col")] <- paste0(sa_name,sep="_",y)
-    
   }
-  
 }
 
 saveRDS(fr_air_all_year,"fr_air_all_year.rds")
