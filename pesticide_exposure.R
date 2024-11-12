@@ -1277,7 +1277,8 @@ pesticide_CMR_all_check_df <- with(pesticide_CMR_all_check_df, pesticide_CMR_all
 pesticide_CMR_all_check_sf$mean_ift <- pesticide_CMR_all_check_df$sum_ift_area/pesticide_CMR_all_check_sf$area
 pesticide_CMR_all_check_sf$mean_ift_hbc <- pesticide_CMR_all_check_df$sum_ift_hbc_area/pesticide_CMR_all_check_sf$area
 
-saveRDS(pesticide_CMR_all_check_sf,"output/pesticide_CMR_all_check_sf.rds")
+#saveRDS(pesticide_CMR_all_check_sf,"output/pesticide_CMR_all_check_sf.rds")
+pesticide_CMR_all_check_sf <- readRDS("output/pesticide_CMR_all_check_sf.rds")
 
 cor.test(pesticide_CMR_all_check_sf$all_pesticide_exposure,pesticide_CMR_all_check_sf$mean_ift)
 cor.test(pesticide_CMR_all_check_sf$mean_concentration_scale,pesticide_CMR_all_check_sf$mean_ift)
@@ -1312,8 +1313,8 @@ pesticide_CMR_all_check2020_df <- with(pesticide_CMR_all_check2020_df, pesticide
 pesticide_CMR_all_check2020_sf$mean_ift <- pesticide_CMR_all_check2020_df$sum_ift_area/pesticide_CMR_all_check2020_sf$area
 pesticide_CMR_all_check2020_sf$mean_ift_hbc <- pesticide_CMR_all_check2020_df$sum_ift_hbc_area/pesticide_CMR_all_check2020_sf$area
 
-saveRDS(pesticide_CMR_all_check2020_sf,"output/pesticide_CMR_all_check2020_sf.rds")
-
+#saveRDS(pesticide_CMR_all_check2020_sf,"output/pesticide_CMR_all_check2020_sf.rds")
+pesticide_CMR_all_check2020_sf <- readRDS("output/pesticide_CMR_all_check2020_sf.rds")
 
 
 ## map comparison
@@ -1322,13 +1323,17 @@ code_postal <- sf::st_read("raw_data/correspondance-code-insee-code-postal.geojs
 
 fr <- st_transform(code_postal[which(!(code_postal$nom_region %in% c("GUYANE","MAYOTTE","GUADELOUPE","MARTINIQUE","REUNION"))),],crs = "EPSG:2154" ) 
 
-pesticide_CMR_all_check_rast <- pesticide_CMR_all_check_sf[,c("all_pesticide_exposure","mean_ift","mean_ift_hbc")]
+pesticide_CMR_all_check_rast <- pesticide_CMR_all_check_sf[,c("all_pesticide_exposure","mean_ift","mean_ift_hbc","mean_itt")]
 pesticide_CMR_all_check_rast$all_pesticide_exposure <- scales::rescale(pesticide_CMR_all_check_rast$all_pesticide_exposure)
 pesticide_CMR_all_check_rast$mean_ift <- scales::rescale(pesticide_CMR_all_check_rast$mean_ift)
 pesticide_CMR_all_check_rast$mean_ift_hbc <- scales::rescale(pesticide_CMR_all_check_rast$mean_ift_hbc)
-pesticide_CMR_all_check_rast <- st_rasterize(pesticide_CMR_all_check_rast, st_crop(st_as_stars(st_bbox(fr),dx=20000),fr))
+pesticide_CMR_all_check_rast$mean_itt <- scales::rescale(pesticide_CMR_all_check_rast$mean_itt)
+pesticide_CMR_all_check_rast <- st_rasterize(pesticide_CMR_all_check_rast, st_crop(st_as_stars(st_bbox(fr),dx=10000),fr))
+pesticide_CMR_all_check_rast_1000 <- st_rasterize(pesticide_CMR_all_check_rast, st_crop(st_as_stars(st_bbox(fr),dx=1000),fr))
+#saveRDS(pesticide_CMR_all_check_rast_1000,"output/pesticide_CMR_all_check_rast_1000.rds")
 
 write_stars(pesticide_CMR_all_check_rast,"output/all_pesticide_exposure.tif",layer = "all_pesticide_exposure")
+write_stars(pesticide_CMR_all_check_rast,"output/mean_itt.tif",layer = "mean_itt")
 write_stars(pesticide_CMR_all_check_rast,"output/mean_ift.tif",layer = "mean_ift")
 write_stars(pesticide_CMR_all_check_rast,"output/mean_ift_hbc.tif",layer = "mean_ift_hbc")
 
@@ -1394,3 +1399,75 @@ ggplot() + tidyterra::geom_spatraster(data=cor_2013)
 ssim_raster(img1,img2)
 result_raster <- ssim_raster(img1,img2,global = FALSE)
 levelplot(result_raster)
+
+
+### map comparison small agri region  https://agreste.agriculture.gouv.fr/agreste-web/methodon/Z.1/!searchurl/listeTypeMethodon/
+
+pra <- read.csv("raw_data/Referentiel_CommuneRA_PRA_2017.csv", header=TRUE) 
+
+
+code_postal <- sf::st_read("raw_data/georef-france-commune-arrondissement-municipal-millesime.geojson")
+code_postal_2017 <- code_postal[which(code_postal$year==2017),]
+code_postal_metro_2017 <- code_postal_2017[which(!(code_postal_2017$reg_name %in% c("Guadeloupe","Martinique","La Réunion","Mayotte","Île de Clipperton",
+                                                                               "Guyane","Saint-Pierre-et-Miquelon","Terres australes et antarctiques françaises",
+                                                                               "Wallis et Futuna","Saint-Martin","Saint-Barthélemy"))),]
+
+code_postal_metro_2017 <- st_transform(code_postal_metro_2017,crs="EPSG:2154")
+
+
+#saveRDS(code_postal_metro_2017,"output/code_postal_metro_2017.rds")
+code_postal_metro_2017 <- readRDS("output/code_postal_metro_2017.rds")
+code_postal_metro_2017 <- code_postal_metro_2017[,c("com_code")]
+code_postal_metro_2017$com_code <- unlist(code_postal_metro_2017$com_code)
+
+fr_pra <- merge(code_postal_metro_2017,pra,by.x="com_code",by.y="CODGEO", all.x=TRUE)
+
+fr_pra2 <- fr_pra %>% group_by(PRA_Code) %>% summarise(id="PRA_Code")
+
+ggplot(fr_pra2)+
+  geom_sf(aes(fill=PRA_Code), colour=NA) +  theme_void() +
+  theme(axis.text=element_blank(),legend.position = "none")
+
+#saveRDS(fr_pra2,"output/fr_pra2.rds")
+fr_pra2 <- readRDS("output/fr_pra2.rds")
+
+pesticide_CMR_all <- readRDS("output/pesticide_CMR_all.rds")
+
+fr_pra2 <- st_transform(fr_pra2,st_crs(pesticide_CMR_all))
+
+pesticide_CMR_all_check_rast_1000 <- readRDS("output/pesticide_CMR_all_check_rast_1000.rds")
+pesticide_CMR_all_check_rast_1000 <- terra::rast(pesticide_CMR_all_check_rast_1000)
+
+fr_pra2$all_pesticide_exposure <- exact_extract(pesticide_CMR_all_check_rast_1000$all_pesticide_exposure_all_pesticide_exposure,fr_pra2,fun="mean")
+fr_pra2$mean_ift_hbc <- exact_extract(pesticide_CMR_all_check_rast_1000$mean_ift_hbc_mean_ift_hbc,fr_pra2,fun="mean")
+fr_pra2$mean_itt <- exact_extract(pesticide_CMR_all_check_rast_1000$mean_itt_mean_itt,fr_pra2,fun="mean")
+
+
+ggplot(fr_pra2)+
+  geom_sf(aes(fill=all_pesticide_exposure), colour=NA) +  theme_void() +
+  theme(axis.text=element_blank(),legend.position = "none") + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt")
+
+ggplot(fr_pra2)+
+  geom_sf(aes(fill=mean_ift_hbc), colour=NA) +  theme_void() +
+  theme(axis.text=element_blank(),legend.position = "none") + scale_fill_gradientn(colors = sf.colors(20))
+
+ggplot(fr_pra2)+
+  geom_sf(aes(fill=mean_itt), colour=NA) +  theme_void() +
+  theme(axis.text=element_blank(),legend.position = "none") + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt")
+
+cor.test(pesticide_CMR_all_check_sf$all_pesticide_exposure,pesticide_CMR_all_check_sf$mean_ift_hbc,method = "spearman")
+cor.test(fr_pra2$all_pesticide_exposure,fr_pra2$mean_ift_hbc,method = "spearman")
+cor.test(pesticide_CMR_all_check_sf$mean_itt,pesticide_CMR_all_check_sf$mean_ift_hbc,method = "spearman")
+cor.test(fr_pra2$mean_itt,fr_pra2$mean_ift_hbc,method = "spearman")
+
+fr_pra2$diff <- fr_pra2$all_pesticide_exposure-fr_pra2$mean_ift_hbc
+ggplot(fr_pra2)+
+  geom_sf(aes(fill=diff), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_void()
+
+fr_pra2$diff2 <- fr_pra2$mean_itt-fr_pra2$mean_ift_hbc
+ggplot(fr_pra2)+
+  geom_sf(aes(fill=diff2), colour=NA) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_void()
