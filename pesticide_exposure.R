@@ -353,7 +353,8 @@ names(mandatory_all_CAS) <- c("active_substance","CAS_number")
 
 write.csv2(mandatory_all_CAS, "output/Active_substance_to_report.csv", row.names = FALSE)
 
-pesticide_soil <- itt_pesticide_year[,c(1,2,which(names(itt_pesticide_year) %in% mandatory_all))]
+#pesticide_soil <- itt_pesticide_year[,c(1,2,which(names(itt_pesticide_year) %in% mandatory_all))]
+pesticide_soil <- qsa_dhsa_pesticide_year_com[,c(1,2,which(names(qsa_dhsa_pesticide_year_com) %in% mandatory_all))]
 pesticide_soil_qsa <- qsa_pesticide_year[,c(1,2,which(names(qsa_pesticide_year) %in% mandatory_all))]
 pesticide_soil_com <- itt_pesticide_year_com[,c(1,2,which(names(itt_pesticide_year_com) %in% mandatory_all))]
 pesticide_air <- df_sa_year_long[,c(1,2,which(names(df_sa_year_long) %in% mandatory_all))]
@@ -1323,11 +1324,13 @@ code_postal <- sf::st_read("raw_data/correspondance-code-insee-code-postal.geojs
 
 fr <- st_transform(code_postal[which(!(code_postal$nom_region %in% c("GUYANE","MAYOTTE","GUADELOUPE","MARTINIQUE","REUNION"))),],crs = "EPSG:2154" ) 
 
-pesticide_CMR_all_check_rast <- pesticide_CMR_all_check_sf[,c("all_pesticide_exposure","mean_ift","mean_ift_hbc","mean_itt")]
+pesticide_CMR_all_check_rast <- pesticide_CMR_all_check_sf[,c("all_pesticide_exposure","mean_ift","mean_ift_hbc","mean_itt","mean_concentration_water","mean_concentration")]
 pesticide_CMR_all_check_rast$all_pesticide_exposure <- scales::rescale(pesticide_CMR_all_check_rast$all_pesticide_exposure)
 pesticide_CMR_all_check_rast$mean_ift <- scales::rescale(pesticide_CMR_all_check_rast$mean_ift)
 pesticide_CMR_all_check_rast$mean_ift_hbc <- scales::rescale(pesticide_CMR_all_check_rast$mean_ift_hbc)
 pesticide_CMR_all_check_rast$mean_itt <- scales::rescale(pesticide_CMR_all_check_rast$mean_itt)
+pesticide_CMR_all_check_rast$mean_concentration_water <- scales::rescale(pesticide_CMR_all_check_rast$mean_concentration_water)
+pesticide_CMR_all_check_rast$mean_concentration <- scales::rescale(pesticide_CMR_all_check_rast$mean_concentration)
 pesticide_CMR_all_check_rast <- st_rasterize(pesticide_CMR_all_check_rast, st_crop(st_as_stars(st_bbox(fr),dx=10000),fr))
 pesticide_CMR_all_check_rast_1000 <- st_rasterize(pesticide_CMR_all_check_rast, st_crop(st_as_stars(st_bbox(fr),dx=1000),fr))
 #saveRDS(pesticide_CMR_all_check_rast_1000,"output/pesticide_CMR_all_check_rast_1000.rds")
@@ -1432,6 +1435,7 @@ ggplot(fr_pra2)+
 fr_pra2 <- readRDS("output/fr_pra2.rds")
 
 pesticide_CMR_all <- readRDS("output/pesticide_CMR_all.rds")
+pesticide_CMR_all_check_sf <- readRDS("output/pesticide_CMR_all_check_sf.rds")
 
 fr_pra2 <- st_transform(fr_pra2,st_crs(pesticide_CMR_all))
 
@@ -1441,33 +1445,102 @@ pesticide_CMR_all_check_rast_1000 <- terra::rast(pesticide_CMR_all_check_rast_10
 fr_pra2$all_pesticide_exposure <- exact_extract(pesticide_CMR_all_check_rast_1000$all_pesticide_exposure_all_pesticide_exposure,fr_pra2,fun="mean")
 fr_pra2$mean_ift_hbc <- exact_extract(pesticide_CMR_all_check_rast_1000$mean_ift_hbc_mean_ift_hbc,fr_pra2,fun="mean")
 fr_pra2$mean_itt <- exact_extract(pesticide_CMR_all_check_rast_1000$mean_itt_mean_itt,fr_pra2,fun="mean")
+fr_pra2$mean_concentration_water <- exact_extract(pesticide_CMR_all_check_rast_1000$mean_concentration_water_mean_concentration_water,fr_pra2,fun="mean")
+fr_pra2$mean_concentration <- exact_extract(pesticide_CMR_all_check_rast_1000$mean_concentration_mean_concentration,fr_pra2,fun="mean")
 
 
 ggplot(fr_pra2)+
-  geom_sf(aes(fill=all_pesticide_exposure), colour=NA) +  theme_void() +
-  theme(axis.text=element_blank(),legend.position = "none") + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt")
+  geom_sf(aes(fill=all_pesticide_exposure), colour=NA) +  
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+ggsave("output/figure_pra_combine_exposure.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
 
 ggplot(fr_pra2)+
-  geom_sf(aes(fill=mean_ift_hbc), colour=NA) +  theme_void() +
-  theme(axis.text=element_blank(),legend.position = "none") + scale_fill_gradientn(colors = sf.colors(20))
+  geom_sf(aes(fill=mean_ift_hbc), colour=NA) + 
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme_void()
+
+ggsave("output/figure_pra_adonis.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
 
 ggplot(fr_pra2)+
-  geom_sf(aes(fill=mean_itt), colour=NA) +  theme_void() +
-  theme(axis.text=element_blank(),legend.position = "none") + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt")
+  geom_sf(aes(fill=mean_itt), colour=NA) +  
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+ggsave("output/figure_pra_tii.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
+
+ggplot(fr_pra2)+
+  geom_sf(aes(fill=mean_concentration_water), colour=NA) +  
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
+
+ggplot(fr_pra2)+
+  geom_sf(aes(fill=mean_concentration), colour=NA) +  
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
+  theme_void()
 
 cor.test(pesticide_CMR_all_check_sf$all_pesticide_exposure,pesticide_CMR_all_check_sf$mean_ift_hbc,method = "spearman")
 cor.test(fr_pra2$all_pesticide_exposure,fr_pra2$mean_ift_hbc,method = "spearman")
 cor.test(pesticide_CMR_all_check_sf$mean_itt,pesticide_CMR_all_check_sf$mean_ift_hbc,method = "spearman")
 cor.test(fr_pra2$mean_itt,fr_pra2$mean_ift_hbc,method = "spearman")
+cor.test(fr_pra2$mean_itt,fr_pra2$mean_concentration_water,method = "spearman")
+cor.test(fr_pra2$mean_itt,fr_pra2$mean_concentration,method = "spearman")
 
-fr_pra2$diff <- fr_pra2$all_pesticide_exposure-fr_pra2$mean_ift_hbc
-ggplot(fr_pra2)+
-  geom_sf(aes(fill=diff), colour=NA) +
-  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
-  theme_void()
+ggplot(fr_pra2, aes(x=mean_ift_hbc,y=all_pesticide_exposure)) +
+  geom_smooth(method = "lm", formula = y~x, 
+              se = FALSE, fullrange = TRUE, col="black") +
+  geom_point(aes(color = mean_ift_hbc, fill = mean_ift_hbc),
+             size = 2.5, alpha = 0.5, 
+             shape = 21) +
+  scale_fill_gradientn(colors = sf.colors(20)) + 
+  annotate("label", label = paste("Spearman's ρ =",
+                                  round(cor(fr_pra2$all_pesticide_exposure,fr_pra2$mean_ift_hbc,method = "spearman"),2)),
+           x = 0.4, y = 0.5, size = 5, colour = "black") +
+  theme_minimal_hgrid(12, rel_small = 1) + ylab("Combined pesticide exposure") + xlab("TFI") +
+  theme(legend.position = "none")
 
-fr_pra2$diff2 <- fr_pra2$mean_itt-fr_pra2$mean_ift_hbc
-ggplot(fr_pra2)+
-  geom_sf(aes(fill=diff2), colour=NA) +
-  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
-  theme_void()
+ggsave("output/figure_cor_combineexposure_adonis.png",
+       width = 7,
+       height = 4,
+       dpi = 400)
+
+ggplot(fr_pra2, aes(x=mean_ift_hbc,y=mean_itt)) +
+  geom_smooth(method = "lm", formula = y~x, 
+              se = FALSE, fullrange = TRUE, col="black") +
+  geom_point(aes(color = mean_ift_hbc, fill = mean_ift_hbc),
+             size = 2.5, alpha = 0.5, 
+             shape = 21) +
+  scale_fill_gradientn(colors = sf.colors(20)) + 
+  annotate("label", label = paste("Spearman's ρ =",
+                                  round(cor(fr_pra2$mean_itt,fr_pra2$mean_ift_hbc,method = "spearman"),2)),
+           x = 0.4, y = 0.5, size = 5, colour = "black") +
+  theme_minimal_hgrid(12, rel_small = 1) + ylab("eTII") + xlab("TFI") +
+  theme(legend.position = "none")
+
+ggsave("output/figure_cor_tii_adonis.png",
+       width = 7,
+       height = 4,
+       dpi = 400)
+
+ggplot(fr_pra2, aes(x=mean_concentration_water,y=mean_itt)) +
+  geom_smooth(method = "lm", formula = y~x, 
+              se = FALSE, fullrange = TRUE, col="black") +
+  geom_point(aes(color = mean_ift_hbc, fill = mean_ift_hbc),
+             size = 2.5, alpha = 0.5, 
+             shape = 21) +
+  scale_fill_gradientn(colors = sf.colors(20)) + 
+  annotate("label", label = paste("Spearman's ρ =",
+                                  round(cor(fr_pra2$mean_itt,fr_pra2$mean_concentration_water,method = "spearman"),2)),
+           x = 0.4, y = 0.5, size = 5, colour = "black") +
+  theme_minimal_hgrid(12, rel_small = 1) + ylab("eTII") + xlab("Concentration water") +
+  theme(legend.position = "none")
