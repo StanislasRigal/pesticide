@@ -355,7 +355,7 @@ write.csv2(mandatory_all_CAS, "output/Active_substance_to_report.csv", row.names
 
 #pesticide_soil <- itt_pesticide_year[,c(1,2,which(names(itt_pesticide_year) %in% mandatory_all))]
 pesticide_soil <- qsa_dhsa_pesticide_year_com[,c(1,2,which(names(qsa_dhsa_pesticide_year_com) %in% mandatory_all))]
-pesticide_soil_qsa <- qsa_pesticide_year[,c(1,2,which(names(qsa_pesticide_year) %in% mandatory_all))]
+pesticide_soil_qsa <- qsa_pesticide_year_com[,c(1,2,which(names(qsa_pesticide_year_com) %in% mandatory_all))]
 pesticide_soil_com <- itt_pesticide_year_com[,c(1,2,which(names(itt_pesticide_year_com) %in% mandatory_all))]
 pesticide_air <- df_sa_year_long[,c(1,2,which(names(df_sa_year_long) %in% mandatory_all))]
 pesticide_water <- bassin_versant_all_year[,c(1,2,which(names(bassin_versant_all_year) %in% mandatory_all))]
@@ -422,6 +422,26 @@ saveRDS(pesticide_soil_qsa_dhsa_com_CMR,"output/pesticide_soil_qsa_dhsa_com_CMR.
 saveRDS(pesticide_air_CMR,"output/pesticide_air_CMR.rds")
 saveRDS(pesticide_water_CMR,"output/pesticide_water_CMR.rds")
 
+sa_class <- unique(pesticide_pre_itt[c('substance', "cas",'classification')])
+sa_TTCMR <- sa_class[which(sa_class$classification %in% c("T, T+, CMR","Env A","Env B", "Santé A", "CMR")),]
+sa_TTCMR <- unique(sa_TTCMR[c('substance', "cas")])
+sa_TTCMR_mandatory <- merge(sa_TTCMR, mandatory_all_CAS, by.x="cas",by.y="CAS_number")
+sa_TTCMR_mandatory <- sa_TTCMR_mandatory[which(!sa_TTCMR_mandatory$active_substance=="Orange oil"),]
+sa_TTCMR_mandatory$active_substance[which(sa_TTCMR_mandatory$active_substance=="Gibberellins")] <- "Glufosinate"
+
+pesticide_soil_qsa_dhsa_com_CMR <- qsa_dhsa_pesticide_year_com[,c(1:6,which(names(qsa_dhsa_pesticide_year_com) %in% sa_TTCMR_mandatory$active_substance))]
+pesticide_air_CMR <- df_sa_year_long[,c(1,2,which(names(df_sa_year_long) %in% sa_TTCMR_mandatory$active_substance))]
+pesticide_water_CMR <- bassin_versant_all_year[,c(1,2,which(names(bassin_versant_all_year) %in% sa_TTCMR_mandatory$active_substance))]
+
+
+substance_active_unique$as_use <- NA
+substance_active_unique$as_use[which(substance_active_unique$Nom.substance.active %in% names(pesticide_soil_qsa_dhsa_com_CMR))] <- 1
+substance_active_unique$as_air <- NA
+substance_active_unique$as_air[which(substance_active_unique$Nom.substance.active %in% names(pesticide_air_CMR))] <- 1
+substance_active_unique$as_water <- NA
+substance_active_unique$as_water[which(substance_active_unique$Nom.substance.active %in% names(pesticide_water_CMR))] <- 1
+substance_active_unique_selected <- substance_active_unique[which(substance_active_unique$as_use == 1 | substance_active_unique$as_air == 1 | substance_active_unique$as_water == 1),c("Nom.substance.active","Numero.CAS","as_use","as_air","as_water")]
+write.csv(substance_active_unique_selected,"output/substance_active_unique_selected.csv",row.names = FALSE)
 
 average_soil_CMR <- pesticide_soil_CMR
 st_geometry(average_soil_CMR) <- NULL
@@ -1544,3 +1564,109 @@ ggplot(fr_pra2, aes(x=mean_concentration_water,y=mean_itt)) +
            x = 0.4, y = 0.5, size = 5, colour = "black") +
   theme_minimal_hgrid(12, rel_small = 1) + ylab("eTII") + xlab("Concentration water") +
   theme(legend.position = "none")
+
+### population exposure
+
+pesticide_CMR_all_test <- readRDS("output/pesticide_CMR_all.rds")
+
+pop_com <- read.csv2("raw_data/DS_POPULATIONS_REFERENCE_CSV_FR/DS_POPULATIONS_REFERENCE_data.csv")
+pop_com <- pop_com[which(pop_com$GEO_OBJECT == "COM" & pop_com$POPREF_MEASURE=="PMUN" & pop_com$TIME_PERIOD == 2022),]
+
+# from https://public.opendatasoft.com/explore/dataset/georef-france-commune/export/?flg=fr&disjunctive.reg_name&disjunctive.dep_name&disjunctive.arrdep_name&disjunctive.ze2020_name&disjunctive.epci_name&disjunctive.ept_name&disjunctive.com_name&disjunctive.ze2010_name&disjunctive.com_is_mountain_area&disjunctive.bv2022_name
+code_postal <- sf::st_read("raw_data/georef-france-commune.geojson")
+code_postal <- code_postal[,c("reg_name","com_code")]
+code_postal$reg_name <- unlist(code_postal$reg_name)
+code_postal$com_code <- unlist(code_postal$com_code)
+code_postal <- code_postal[which(!(code_postal$reg_name %in% c("Guadeloupe","Mayotte","Martinique","Guyane","La Réunion",
+                                                               "Saint-Martin","Saint-Pierre-et-Miquelon","Terres australes et antarctiques françaises",
+                                                               "Wallis et Futuna","Saint-Barthélemy","Île de Clipperton"))),]
+pop_com_sf <- merge(code_postal,pop_com,by.x=c("com_code"), by.y=c("GEO"), all.x=TRUE)
+
+pop_com_sf <- st_transform(pop_com_sf, crs = st_crs(pesticide_CMR_all_test))
+code_postal_outline <- st_union(pop_com_sf)
+
+saveRDS(pop_com_sf,"output/pop_com_sf.rds")
+saveRDS(code_postal_outline,"output/code_postal_outline.rds")
+
+ggplot(pop_com_sf)+
+  geom_sf(aes(fill=OBS_VALUE), col=NA) +
+  theme(axis.text=element_blank()) +
+  scale_fill_gradient(name = "count", trans = "log")
+
+pop_com_pesticide <- st_intersects(pop_com_sf,pesticide_CMR_all_test)
+
+pesticide_mean <- c()
+pesticide_sd <- c()
+for(i in 1:length(pop_com_pesticide)){
+  pesticide_mean[i] <- mean(pesticide_CMR_all_test_df[pop_com_pesticide[[i]],"all_pesticide_exposure"], na.rm=TRUE)
+  pesticide_sd[i] <- sd(pesticide_CMR_all_test_df[pop_com_pesticide[[i]],"all_pesticide_exposure"], na.rm=TRUE)
+}
+
+pop_com_sf$pesticide_mean <- pesticide_mean
+pop_com_sf$pesticide_sd <- pesticide_sd
+pop_com_sf$area <- as.numeric(st_area(pop_com_sf))
+pop_com_sf$density <- pop_com_sf$OBS_VALUE/(pop_com_sf$area/1000000)
+
+ggplot(pop_com_sf, aes(y=pesticide_mean, x= density)) +
+  geom_point()
+
+sum(pop_com_sf$OBS_VALUE[which(pop_com_sf$pesticide_mean > mean(pesticide_CMR_all_test$all_pesticide_exposure, na.rm=TRUE))])/sum(pop_com_sf$OBS_VALUE)
+
+pop_com_sf$increased_health_risk <-  "Lower population or pesticide exposure"
+pop_com_sf$increased_health_risk[which(pop_com_sf$pesticide_mean > mean(pesticide_CMR_all_test$all_pesticide_exposure, na.rm=TRUE) & pop_com_sf$density > median(pop_com_sf$density, na.rm=TRUE))] <- "Higher population and pesticide exposure"
+
+ggplot(pop_com_sf) +
+  geom_sf(aes(fill=increased_health_risk), col=NA) + scale_fill_manual(values = c("Lower population or pesticide exposure" = "#3E00FFFF",
+                                                                                  "Higher population and pesticide exposure" = "#FF936CFF"), name="Health risk") +
+  theme(axis.text=element_blank()) +  theme_void()
+
+pop_com_sf_risk <- pop_com_sf[which(pop_com_sf$pesticide_mean > mean(pesticide_CMR_all_test$all_pesticide_exposure, na.rm=TRUE)),]
+pop_com_sf_risk <- st_union(pop_com_sf_risk)
+
+ggplot(pop_com_sf)+
+  geom_sf(aes(fill=density), col=NA) +
+  theme(axis.text=element_blank()) + theme_void() +
+  scale_fill_gradient(name = "Population density", trans = "log", breaks=c(10,100,1000)) +
+  geom_sf(data=pop_com_sf_risk, fill="white", alpha=0.3)
+  
+
+ggsave("output/figure_cpe_population.png",
+       width = 7,
+       height = 4,
+       dpi = 400)
+
+### natura2000
+
+map_protected_area <- sf::st_read("raw_data/zps/zps.shp")
+map_protected_area <- st_make_valid(st_transform(map_protected_area, crs = st_crs(pesticide_CMR_all_test)))
+map_protected_area_fr <- st_intersection(map_protected_area,code_postal_outline)
+
+saveRDS(map_protected_area_fr,"output/map_protected_area_fr.rds")
+
+map_protected_area_pesticide <- st_intersects(map_protected_area_fr,pesticide_CMR_all_test)
+pesticide_CMR_all_test_df <- pesticide_CMR_all_test
+st_geometry(pesticide_CMR_all_test_df) <- NULL
+
+pesticide_mean <- c()
+pesticide_sd <- c()
+for(i in 1:length(map_protected_area_pesticide)){
+  pesticide_mean[i] <- mean(pesticide_CMR_all_test_df[map_protected_area_pesticide[[i]],"all_pesticide_exposure"], na.rm=TRUE)
+  pesticide_sd[i] <- sd(pesticide_CMR_all_test_df[map_protected_area_pesticide[[i]],"all_pesticide_exposure"], na.rm=TRUE)
+}
+
+map_protected_area_fr$pesticide_mean <- pesticide_mean
+map_protected_area_fr$pesticide_sd <- pesticide_sd
+
+ggplot(map_protected_area_fr) +
+  geom_sf(data=code_postal_outline) +
+  geom_sf(aes(fill=pesticide_mean), col=NA) + scale_fill_gradientn(colors = sf.colors(20), transform="sqrt", name="Combined pesticide exposure") +
+  theme(axis.text=element_blank()) +  theme_void()
+
+ggsave("output/figure_cpe_natura2000.png",
+       width = 7,
+       height = 4,
+       dpi = 400)
+
+map_protected_area_fr$area <- as.numeric(st_area(map_protected_area_fr))
+
+sum(map_protected_area_fr$area[which(map_protected_area_fr$pesticide_mean > mean(pesticide_CMR_all_test$all_pesticide_exposure, na.rm=TRUE))])/sum(map_protected_area_fr$area)

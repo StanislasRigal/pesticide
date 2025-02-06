@@ -154,7 +154,6 @@ pesticide_water_station_all <- pesticide_water_station_all[which(!(pesticide_wat
 pesticide_water_station_all$RsAna <- as.numeric(pesticide_water_station_all$RsAna)
 pesticide_water_station_all$RsAna_interpreted <- as.numeric(pesticide_water_station_all$RsAna_interpreted)
 
-
 #saveRDS(pesticide_water_station_all,"raw_data/naiade_all/pesticide_water_station_all.rds")
 pesticide_water_station_all <- readRDS("raw_data/naiade_all/pesticide_water_station_all.rds")
 
@@ -165,6 +164,20 @@ pesticide_water_station_simple <- pesticide_water_station_all[,c("CdStationMesur
 # load geographical data for French communes from https://public.opendatasoft.com/explore/dataset/georef-france-commune-arrondissement-municipal-millesime/export/?disjunctive.reg_name&disjunctive.dep_name&disjunctive.arrdep_name&disjunctive.ze2020_name&disjunctive.bv2012_name&disjunctive.epci_name&disjunctive.ept_name&disjunctive.com_name&disjunctive.com_arm_name&disjunctive.com_arm_is_mountain_area&sort=year&location=6,46.97276,3.93311&basemap=jawg.light
 
 code_postal <- sf::st_read("raw_data/correspondance-code-insee-code-postal.geojson")
+
+code_postal_site <- code_postal[which(!(code_postal$nom_region %in% c("GUYANE","MAYOTTE","GUADELOUPE","MARTINIQUE","REUNION"))),]
+code_postal_outline <- st_union(code_postal_site)
+code_postal_outline_reproj <- st_transform(code_postal_outline,crs="EPSG:2154")
+
+station_water_sub <- station_water[which(station_water$CdStationMesureEauxSurface %in% unique(pesticide_water_station_all$CdStationMesureEauxSurface)),]
+
+ggplot(code_postal_outline_reproj)+
+  geom_sf() + geom_sf(data=station_water_sub, size=0.5) + theme_minimal()
+
+ggsave("output/figure_station_water.png",
+       width = 6,
+       height = 6,
+       dpi = 400)
 
 # bassin versant https://www.sandre.eaufrance.fr/atlas/srv/fre/catalog.search#/metadata/9002f47d-62d2-4bff-b95c-b1dc1b0bd319
 

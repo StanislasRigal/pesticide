@@ -17,7 +17,7 @@ code_postal_outline <- st_union(code_postal_site)
 code_postal_outline_reproj <- st_transform(code_postal_outline,crs="EPSG:2154")
 
 ggplot(code_postal_outline_reproj)+
-  geom_sf() + geom_sf(data=station_site) + theme_minimal()
+  geom_sf() + geom_sf(data=station_site, size=0.5) + theme_minimal()
 
 ggsave("output/figure_station_air.png",
        width = 6,
