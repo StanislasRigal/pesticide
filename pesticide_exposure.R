@@ -402,13 +402,16 @@ saveRDS(pesticide_soil_qsa_dhsa_com_CMR,"output/pesticide_soil_qsa_dhsa_com_CMR.
 saveRDS(pesticide_air_CMR,"output/pesticide_air_CMR.rds")
 saveRDS(pesticide_water_CMR,"output/pesticide_water_CMR.rds")
 
-substance_active_unique$as_use <- NA
-substance_active_unique$as_use[which(substance_active_unique$Nom.substance.active %in% names(pesticide_soil_qsa_dhsa_com_CMR))] <- 1
-substance_active_unique$as_air <- NA
-substance_active_unique$as_air[which(substance_active_unique$Nom.substance.active %in% names(pesticide_air_CMR))] <- 1
-substance_active_unique$as_water <- NA
-substance_active_unique$as_water[which(substance_active_unique$Nom.substance.active %in% names(pesticide_water_CMR))] <- 1
-substance_active_unique_selected <- substance_active_unique[which(substance_active_unique$as_use == 1 | substance_active_unique$as_air == 1 | substance_active_unique$as_water == 1),c("Nom.substance.active","Numero.CAS","as_use","as_air","as_water")]
+sa_TTCMR_mandatory2 <- read.csv2("output/sa_TTCMR_mandatory2.csv")
+
+sa_TTCMR_mandatory2$Use <- NA
+sa_TTCMR_mandatory2$Use[which(sa_TTCMR_mandatory2$active_substance %in% names(pesticide_soil_qsa_dhsa_com_CMR))] <- 1
+sa_TTCMR_mandatory2$Air <- NA
+sa_TTCMR_mandatory2$Air[which(sa_TTCMR_mandatory2$active_substance %in% names(pesticide_air_CMR))] <- 1
+sa_TTCMR_mandatory2$Water <- NA
+sa_TTCMR_mandatory2$Water[which(sa_TTCMR_mandatory2$active_substance %in% names(pesticide_water_CMR))] <- 1
+substance_active_unique_selected <- sa_TTCMR_mandatory2[which(sa_TTCMR_mandatory2$Use == 1 | sa_TTCMR_mandatory2$Air == 1 | sa_TTCMR_mandatory2$Water == 1),]
+substance_active_unique_selected$active_substance[which(substance_active_unique_selected$substance == "zetacypermethrine")] <- "Zetacypermethrin"
 write.csv(substance_active_unique_selected,"output/substance_active_unique_selected.csv",row.names = FALSE)
 
 average_soil_CMR <- pesticide_soil_CMR
@@ -1452,7 +1455,7 @@ ggsave("output/figure_pra_combine_exposure.png",
 
 ggplot(fr_pra2)+
   geom_sf(aes(fill=mean_ift_hbc), colour=NA) + 
-  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20)) +
+  theme(axis.text=element_blank()) + scale_fill_gradientn(colors = sf.colors(20),transform="sqrt") +
   theme_void()
 
 ggsave("output/figure_pra_adonis.png",

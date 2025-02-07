@@ -949,30 +949,14 @@ Active_substances_in_water <- pesticide_water
 
 ```{r}
 
-sa_class <- unique(pesticide_pre_tii[c('substance', 'classification')])
+sa_class <- unique(pesticide_pre_itt[c('substance', "cas",'classification')])
 
-sa_TTCMR <- sa_class$substance[which(sa_class$classification=="T, T+, CMR")]
+sa_TTCMR <- sa_class[which(sa_class$classification %in% c("T, T+, CMR","Env A","Env B", "Santé A", "CMR")),]
 
-sa_TTCMR <- foo(sort(sa_TTCMR))
+sa_TTCMR <- unique(sa_TTCMR[c('substance', "cas")])
 
-sa_TTCMR[which(!(sa_TTCMR %in% substance_active$Nom.substance.active))] <- c("1,3-Dichloropropene","6-Benzyladenine","Abamectin",
-                                                                             "Alphamethrin","Aminotriazol","Azoxystrobin",
-                                                                             "Benfluralin","Benfuracarb","Beta-Cyfluthrin",
-                                                                             "Bifenthrin","Bromoxynil","Captan",
-                                                                             "Chlorpropham","Chlorpyrifos","Sintofen",
-                                                                             "Copper compounds","Cuivre de l'oxychlorure de cuivre","Cuivre du tallate de cuivre",
-                                                                             "Cycloxydim","Cyfluthrin","Deltamethrin",
-                                                                             "Diquat (dibromide)","Emamectin","Fenbutatin oxide",
-                                                                             "Fenoxycarb","Fenpropimorph","Fluazifop-P",
-                                                                             "Flumioxazin","Folpet","Formetanate",
-                                                                             "Gamma-cyhalothrin","Glufosinate","Indoxacarb",
-                                                                             "Ioxynil","Lambda-Cyhalothrin","Lenacil",
-                                                                             "Mancozeb","Maneb","Metazachlor",
-                                                                             "Methiocarb","Oxyfluorfen","Aluminium phosphide",
-                                                                             "Pyraclostrobin","Pyridaben","Pirimicarb",
-                                                                             "Tefluthrin","Thiacloprid","Thiencarbazone",
-                                                                             "Triflusulfuron","Zeta-Cypermethrin","Ziram")
-                                                                             
+sa_TTCMR_mandatory <- merge(sa_TTCMR, mandatory_all_CAS, by.x="cas",by.y="CAS_number")
+
 ```
 
 
@@ -980,11 +964,11 @@ sa_TTCMR[which(!(sa_TTCMR %in% substance_active$Nom.substance.active))] <- c("1,
 
 ```{r}
 
-pesticide_soil_CMR <- qsa_dhsa_pesticide_year_com[,c(1:6,which(names(qsa_dhsa_pesticide_year_com) %in% mandatory_all & names(qsa_dhsa_pesticide_year_com) %in% sa_TTCMR))]
+pesticide_soil_CMR <- qsa_dhsa_pesticide_year_com[,c(1:6,which(names(qsa_dhsa_pesticide_year_com) %in% sa_TTCMR_mandatory))]
 
-pesticide_air_CMR <- df_sa_year_long[,c(1,2,which(names(df_sa_year_long) %in% mandatory_all & names(df_sa_year_long) %in% sa_TTCMR))]
+pesticide_air_CMR <- df_sa_year_long[,c(1,2,which(names(df_sa_year_long) %in% mandatory_all & sa_TTCMR_mandatory))]
 
-pesticide_water_CMR <- bassin_versant_all_year[,c(1,2,which(names(bassin_versant_all_year) %in% mandatory_all & names(bassin_versant_all_year) %in% sa_TTCMR))]
+pesticide_water_CMR <- bassin_versant_all_year[,c(1,2,which(names(bassin_versant_all_year) %in% sa_TTCMR_mandatory))]
 
 ```
 
